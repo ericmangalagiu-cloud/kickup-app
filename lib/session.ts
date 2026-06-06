@@ -4,11 +4,16 @@ export async function signUp(name: string, password: string): Promise<{ success:
   const nameLower = name.trim().toLowerCase()
 
   // Check uniqueness in Supabase (cross-device)
-  const { data: existing } = await supabase
+  const { data: existing, error: checkError } = await supabase
     .from('users')
     .select('id')
     .eq('name_lower', nameLower)
     .maybeSingle()
+
+  if (checkError) {
+    console.error('signUp check error:', checkError)
+    return { success: false, error: 'Eroare de conexiune. Verifică internetul și încearcă din nou.' }
+  }
 
   if (existing) {
     return { success: false, error: 'Acest nume este deja folosit. Alege altul sau autentifică-te.' }
@@ -24,6 +29,7 @@ export async function signUp(name: string, password: string): Promise<{ success:
   })
 
   if (error) {
+    console.error('signUp insert error:', error)
     // Unique violation — race condition, someone registered same name just now
     if (error.code === '23505') {
       return { success: false, error: 'Acest nume este deja folosit. Alege altul sau autentifică-te.' }
@@ -39,11 +45,16 @@ export async function signUp(name: string, password: string): Promise<{ success:
 export async function logIn(name: string, password: string): Promise<{ success: boolean; error?: string }> {
   const nameLower = name.trim().toLowerCase()
 
-  const { data: user } = await supabase
+  const { data: user, error: loginError } = await supabase
     .from('users')
     .select('*')
     .eq('name_lower', nameLower)
     .maybeSingle()
+
+  if (loginError) {
+    console.error('logIn query error:', loginError)
+    return { success: false, error: 'Eroare de conexiune. Verifică internetul și încearcă din nou.' }
+  }
 
   if (!user) {
     return { success: false, error: 'Numele acesta nu există. Înregistrează-te mai întâi.' }

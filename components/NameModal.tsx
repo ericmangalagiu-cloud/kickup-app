@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { getSession, signUp, logIn, isLegacyAccount } from '@/lib/session'
 import { useNameModal } from '@/hooks/useNameModal'
@@ -16,6 +16,8 @@ export function NameModal() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
+  // Used to suppress the mode-change clear when we programmatically switch mode
+  const skipClear = useRef(false)
 
   useEffect(() => {
     setMounted(true)
@@ -23,10 +25,8 @@ export function NameModal() {
     if (!session) {
       open()
     } else {
-      // Account exists in localStorage but not in Supabase (created before users table)
       isLegacyAccount(session.sessionId).then(legacy => {
         if (legacy) {
-          // Clear stale local session and force re-registration
           localStorage.removeItem('kickup_name')
           localStorage.removeItem('kickup_session_id')
           open()
@@ -35,24 +35,23 @@ export function NameModal() {
     }
   }, [])
 
-  // Track whether the mode switch was triggered manually (by user clicking tabs)
-  const [manualModeSwitch, setManualModeSwitch] = useState(false)
+  function switchMode(next: Mode) {
+    // Manual tab switch → clear everything
+    setMode(next)
+    setError('')
+    setPassword('')
+    setName('')
+    setShowPassword(false)
+  }
 
-  useEffect(() => {
-    if (manualModeSwitch) {
-      setError('')
-      setPassword('')
-      setName('')
-      setShowPassword(false)
-      setManualModeSwitch(false)
-    }
-    // If mode was changed programmatically (auto-switch), keep name and just clear password
-    else {
-      setError('')
-      setPassword('')
-      setShowPassword(false)
-    }
-  }, [mode])
+  function switchModeKeepName(next: Mode, newError: string) {
+    // Programmatic switch (e.g. auto-flip to login) → keep name, set error
+    skipClear.current = true
+    setMode(next)
+    setPassword('')
+    setShowPassword(false)
+    setError(newError)
+  }
 
   if (!mounted || !isOpen) return null
 
@@ -68,10 +67,9 @@ export function NameModal() {
         : await logIn(name.trim(), password)
 
       if (!result.success) {
-        // If signup failed because name exists → auto-switch to login
         if (mode === 'signup' && result.error?.includes('deja folosit')) {
-          setMode('login')
-          setError('Acest nume există deja. Autentifică-te cu parola ta.')
+          // Name exists → auto-switch to login and keep the name
+          switchModeKeepName('login', 'Nume deja înregistrat. Introdu parola ta.')
         } else {
           setError(result.error || 'Eroare.')
         }
@@ -82,7 +80,8 @@ export function NameModal() {
       window.dispatchEvent(new Event('session-updated'))
       close()
       window.location.href = '/'
-    } catch {
+    } catch (err) {
+      console.error('Auth error:', err)
       setError('Eroare de conexiune. Încearcă din nou.')
       setLoading(false)
     }
@@ -105,14 +104,14 @@ export function NameModal() {
         <div className="flex rounded-xl bg-gray-100 p-1 mb-6">
           <button
             type="button"
-            onClick={() => { setManualModeSwitch(true); setMode('signup') }}
+            onClick={() => switchMode('signup')}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === 'signup' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Înregistrare
           </button>
           <button
             type="button"
-            onClick={() => { setManualModeSwitch(true); setMode('login') }}
+            onClick={() => switchMode('login')}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === 'login' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Autentificare
@@ -180,7 +179,7 @@ export function NameModal() {
           {mode === 'signup' ? 'Ai deja un cont? ' : 'Nu ai cont? '}
           <button
             type="button"
-            onClick={() => { setManualModeSwitch(true); setMode(mode === 'signup' ? 'login' : 'signup') }}
+            onClick={() => switchMode(mode === 'signup' ? 'login' : 'signup')}
             className="text-green-600 font-medium hover:underline"
           >
             {mode === 'signup' ? 'Autentifică-te' : 'Înregistrează-te'}
