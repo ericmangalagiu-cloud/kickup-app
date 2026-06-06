@@ -1,25 +1,62 @@
+const ACCOUNTS_KEY = 'kickup_accounts'
+
+function getRegistry(): Record<string, string> {
+  if (typeof window === 'undefined') return {}
+  try {
+    return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '{}')
+  } catch {
+    return {}
+  }
+}
+
+function saveToRegistry(name: string, sessionId: string) {
+  const registry = getRegistry()
+  registry[name.trim().toLowerCase()] = sessionId
+  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(registry))
+}
+
+function lookupByName(name: string): string | null {
+  const registry = getRegistry()
+  return registry[name.trim().toLowerCase()] || null
+}
+
 export function getSession(): { name: string; sessionId: string } | null {
   if (typeof window === 'undefined') return null
   const name = localStorage.getItem('kickup_name')
   let sessionId = localStorage.getItem('kickup_session_id')
   if (!name) return null
-  // If name exists but sessionId is missing (e.g. cleared), generate one
   if (!sessionId) {
     sessionId = crypto.randomUUID()
     localStorage.setItem('kickup_session_id', sessionId)
+    saveToRegistry(name, sessionId)
   }
   return { name, sessionId }
 }
 
 export function setSession(name: string): string {
-  const sessionId = crypto.randomUUID()
+  // If this name was used before, restore that session
+  const existing = lookupByName(name)
+  const sessionId = existing || crypto.randomUUID()
   localStorage.setItem('kickup_name', name)
   localStorage.setItem('kickup_session_id', sessionId)
+  saveToRegistry(name, sessionId)
   return sessionId
 }
 
 export function updateName(name: string): void {
-  localStorage.setItem('kickup_name', name)
+  // Check if this name maps to a previous account
+  const existing = lookupByName(name)
+  if (existing) {
+    // Restore previous session
+    localStorage.setItem('kickup_name', name)
+    localStorage.setItem('kickup_session_id', existing)
+  } else {
+    // New name — keep current sessionId, register this name too
+    const currentSessionId = localStorage.getItem('kickup_session_id') || crypto.randomUUID()
+    localStorage.setItem('kickup_name', name)
+    localStorage.setItem('kickup_session_id', currentSessionId)
+    saveToRegistry(name, currentSessionId)
+  }
 }
 
 export function getInitials(name: string): string {

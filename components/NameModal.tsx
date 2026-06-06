@@ -23,13 +23,19 @@ export function NameModal() {
     e.preventDefault()
     if (!name.trim()) return
     const session = getSession()
-    if (session) {
+    const isChangingName = !!session
+
+    if (isChangingName) {
       updateName(name.trim())
+      window.dispatchEvent(new Event('session-updated'))
+      close()
+      // Reload so all page state (game memberships, buttons) reflects the new identity
+      window.location.reload()
     } else {
       setSession(name.trim())
+      window.dispatchEvent(new Event('session-updated'))
+      close()
     }
-    window.dispatchEvent(new Event('session-updated'))
-    close()
   }
 
   return (
