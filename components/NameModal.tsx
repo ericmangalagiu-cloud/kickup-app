@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { getSession, signUp, logIn } from '@/lib/session'
 import { useNameModal } from '@/hooks/useNameModal'
 
@@ -14,6 +14,7 @@ export function NameModal() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -22,39 +23,39 @@ export function NameModal() {
     if (!session) open()
   }, [])
 
-  // Reset fields when mode changes
   useEffect(() => {
     setError('')
     setPassword('')
     setName('')
+    setShowPassword(false)
   }, [mode])
 
   if (!mounted || !isOpen) return null
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     if (!name.trim() || !password.trim()) return
 
-    const isChangingAccount = !!getSession()
+    setLoading(true)
+    try {
+      const result = mode === 'signup'
+        ? await signUp(name.trim(), password)
+        : await logIn(name.trim(), password)
 
-    let result
-    if (mode === 'signup') {
-      result = signUp(name.trim(), password)
-    } else {
-      result = logIn(name.trim(), password)
+      if (!result.success) {
+        setError(result.error || 'Eroare.')
+        setLoading(false)
+        return
+      }
+
+      window.dispatchEvent(new Event('session-updated'))
+      close()
+      window.location.href = '/'
+    } catch {
+      setError('Eroare de conexiune. Încearcă din nou.')
+      setLoading(false)
     }
-
-    if (!result.success) {
-      setError(result.error || 'Eroare.')
-      return
-    }
-
-    window.dispatchEvent(new Event('session-updated'))
-    close()
-
-    // Always go to homepage after any auth action so state is clean
-    window.location.href = '/'
   }
 
   const inputClass = "w-full px-4 py-3 rounded-xl bg-gray-50 border border-black/[0.08] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
@@ -73,12 +74,14 @@ export function NameModal() {
         {/* Mode toggle */}
         <div className="flex rounded-xl bg-gray-100 p-1 mb-6">
           <button
+            type="button"
             onClick={() => setMode('signup')}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === 'signup' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Înregistrare
           </button>
           <button
+            type="button"
             onClick={() => setMode('login')}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === 'login' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
           >
@@ -87,7 +90,6 @@ export function NameModal() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               {mode === 'signup' ? 'Alege un nume de utilizator' : 'Numele tău de utilizator'}
@@ -98,11 +100,11 @@ export function NameModal() {
               onChange={e => { setName(e.target.value); setError('') }}
               placeholder="ex: Andrei Popescu"
               autoFocus
+              disabled={loading}
               className={inputClass}
             />
           </div>
 
-          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               {mode === 'signup' ? 'Creează o parolă' : 'Parola ta'}
@@ -113,6 +115,7 @@ export function NameModal() {
                 value={password}
                 onChange={e => { setPassword(e.target.value); setError('') }}
                 placeholder={mode === 'signup' ? 'Minim 4 caractere' : 'Introdu parola'}
+                disabled={loading}
                 className={inputClass + ' pr-12'}
               />
               <button
@@ -125,7 +128,6 @@ export function NameModal() {
             </div>
           </div>
 
-          {/* Error */}
           {error && (
             <p className="text-red-500 text-sm bg-red-50 border border-red-100 rounded-lg px-3 py-2">
               {error}
@@ -134,18 +136,20 @@ export function NameModal() {
 
           <button
             type="submit"
-            disabled={!name.trim() || !password.trim()}
-            className="btn-gradient w-full py-3 font-semibold text-base disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!name.trim() || !password.trim() || loading}
+            className="btn-gradient w-full py-3 font-semibold text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {mode === 'signup' ? 'Creează cont' : 'Intră în cont'}
+            {loading && <Loader2 size={16} className="animate-spin" />}
+            {loading
+              ? (mode === 'signup' ? 'Se creează contul...' : 'Se verifică...')
+              : (mode === 'signup' ? 'Creează cont' : 'Intră în cont')}
           </button>
         </form>
 
         <p className="text-center text-xs text-gray-400 mt-4">
-          {mode === 'signup'
-            ? 'Ai deja un cont? '
-            : 'Nu ai cont? '}
+          {mode === 'signup' ? 'Ai deja un cont? ' : 'Nu ai cont? '}
           <button
+            type="button"
             onClick={() => setMode(mode === 'signup' ? 'login' : 'signup')}
             className="text-green-600 font-medium hover:underline"
           >

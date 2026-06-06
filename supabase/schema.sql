@@ -32,3 +32,17 @@ alter table players enable row level security;
 
 create policy "Allow all games" on games for all using (true) with check (true);
 create policy "Allow all players" on players for all using (true) with check (true);
+
+-- Run this to add cross-device account uniqueness:
+create table users (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  name_lower text not null,
+  session_id text not null,
+  password text not null,
+  created_at timestamptz default now(),
+  constraint users_name_lower_key unique (name_lower)
+);
+
+alter table users enable row level security;
+create policy "Allow all users" on users for all using (true) with check (true);

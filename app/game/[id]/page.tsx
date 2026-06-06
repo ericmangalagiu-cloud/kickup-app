@@ -132,7 +132,7 @@ export default function GamePage() {
 
   async function shareGame() {
     await navigator.clipboard.writeText(window.location.href)
-    toast({ title: 'Link copiat!', description: 'Trimite-l prietenilor tăi.' })
+    toast({ title: 'Copiat', description: 'Trimite prietenilor tăi!' })
   }
 
   if (loading) {

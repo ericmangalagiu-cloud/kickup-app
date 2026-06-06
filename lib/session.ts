@@ -1,54 +1,60 @@
-const ACCOUNTS_KEY = 'kickup_accounts'
+import { supabase } from './supabase'
 
-interface Account {
-  sessionId: string
-  password: string
-}
+export async function signUp(name: string, password: string): Promise<{ success: boolean; error?: string }> {
+  const nameLower = name.trim().toLowerCase()
 
-export function getRegistry(): Record<string, Account> {
-  if (typeof window === 'undefined') return {}
-  try {
-    return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '{}')
-  } catch {
-    return {}
-  }
-}
+  // Check uniqueness in Supabase (cross-device)
+  const { data: existing } = await supabase
+    .from('users')
+    .select('id')
+    .eq('name_lower', nameLower)
+    .maybeSingle()
 
-function saveRegistry(registry: Record<string, Account>) {
-  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(registry))
-}
-
-export function nameExists(name: string): boolean {
-  const registry = getRegistry()
-  return !!registry[name.trim().toLowerCase()]
-}
-
-export function signUp(name: string, password: string): { success: boolean; error?: string } {
-  const key = name.trim().toLowerCase()
-  const registry = getRegistry()
-  if (registry[key]) {
+  if (existing) {
     return { success: false, error: 'Acest nume este deja folosit. Alege altul sau autentifică-te.' }
   }
+
   const sessionId = crypto.randomUUID()
-  registry[key] = { sessionId, password }
-  saveRegistry(registry)
+
+  const { error } = await supabase.from('users').insert({
+    name: name.trim(),
+    name_lower: nameLower,
+    session_id: sessionId,
+    password,
+  })
+
+  if (error) {
+    // Unique violation — race condition, someone registered same name just now
+    if (error.code === '23505') {
+      return { success: false, error: 'Acest nume este deja folosit. Alege altul sau autentifică-te.' }
+    }
+    return { success: false, error: 'Eroare la înregistrare. Încearcă din nou.' }
+  }
+
   localStorage.setItem('kickup_name', name.trim())
   localStorage.setItem('kickup_session_id', sessionId)
   return { success: true }
 }
 
-export function logIn(name: string, password: string): { success: boolean; error?: string } {
-  const key = name.trim().toLowerCase()
-  const registry = getRegistry()
-  const account = registry[key]
-  if (!account) {
+export async function logIn(name: string, password: string): Promise<{ success: boolean; error?: string }> {
+  const nameLower = name.trim().toLowerCase()
+
+  const { data: user } = await supabase
+    .from('users')
+    .select('*')
+    .eq('name_lower', nameLower)
+    .maybeSingle()
+
+  if (!user) {
     return { success: false, error: 'Numele acesta nu există. Înregistrează-te mai întâi.' }
   }
-  if (account.password !== password) {
+
+  if (user.password !== password) {
     return { success: false, error: 'Parolă greșită. Încearcă din nou.' }
   }
-  localStorage.setItem('kickup_name', name.trim())
-  localStorage.setItem('kickup_session_id', account.sessionId)
+
+  localStorage.setItem('kickup_name', user.name)
+  localStorage.setItem('kickup_session_id', user.session_id)
   return { success: true }
 }
 
@@ -58,18 +64,6 @@ export function getSession(): { name: string; sessionId: string } | null {
   const sessionId = localStorage.getItem('kickup_session_id')
   if (!name || !sessionId) return null
   return { name, sessionId }
-}
-
-// Legacy – kept for compatibility but no longer used by modal
-export function setSession(name: string): string {
-  const sessionId = crypto.randomUUID()
-  localStorage.setItem('kickup_name', name)
-  localStorage.setItem('kickup_session_id', sessionId)
-  return sessionId
-}
-
-export function updateName(name: string): void {
-  localStorage.setItem('kickup_name', name)
 }
 
 export function getInitials(name: string): string {
