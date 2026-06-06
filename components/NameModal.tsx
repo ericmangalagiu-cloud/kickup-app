@@ -35,11 +35,23 @@ export function NameModal() {
     }
   }, [])
 
+  // Track whether the mode switch was triggered manually (by user clicking tabs)
+  const [manualModeSwitch, setManualModeSwitch] = useState(false)
+
   useEffect(() => {
-    setError('')
-    setPassword('')
-    setName('')
-    setShowPassword(false)
+    if (manualModeSwitch) {
+      setError('')
+      setPassword('')
+      setName('')
+      setShowPassword(false)
+      setManualModeSwitch(false)
+    }
+    // If mode was changed programmatically (auto-switch), keep name and just clear password
+    else {
+      setError('')
+      setPassword('')
+      setShowPassword(false)
+    }
   }, [mode])
 
   if (!mounted || !isOpen) return null
@@ -56,7 +68,13 @@ export function NameModal() {
         : await logIn(name.trim(), password)
 
       if (!result.success) {
-        setError(result.error || 'Eroare.')
+        // If signup failed because name exists → auto-switch to login
+        if (mode === 'signup' && result.error?.includes('deja folosit')) {
+          setMode('login')
+          setError('Acest nume există deja. Autentifică-te cu parola ta.')
+        } else {
+          setError(result.error || 'Eroare.')
+        }
         setLoading(false)
         return
       }
@@ -87,14 +105,14 @@ export function NameModal() {
         <div className="flex rounded-xl bg-gray-100 p-1 mb-6">
           <button
             type="button"
-            onClick={() => setMode('signup')}
+            onClick={() => { setManualModeSwitch(true); setMode('signup') }}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === 'signup' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Înregistrare
           </button>
           <button
             type="button"
-            onClick={() => setMode('login')}
+            onClick={() => { setManualModeSwitch(true); setMode('login') }}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === 'login' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Autentificare
@@ -162,7 +180,7 @@ export function NameModal() {
           {mode === 'signup' ? 'Ai deja un cont? ' : 'Nu ai cont? '}
           <button
             type="button"
-            onClick={() => setMode(mode === 'signup' ? 'login' : 'signup')}
+            onClick={() => { setManualModeSwitch(true); setMode(mode === 'signup' ? 'login' : 'signup') }}
             className="text-green-600 font-medium hover:underline"
           >
             {mode === 'signup' ? 'Autentifică-te' : 'Înregistrează-te'}

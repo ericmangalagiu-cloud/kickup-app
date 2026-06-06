@@ -58,15 +58,21 @@ export async function logIn(name: string, password: string): Promise<{ success: 
   return { success: true }
 }
 
-// Returns true if the session_id in localStorage has no matching row in Supabase
-// (i.e. account was created before the users table existed)
+// Returns true only if Supabase confirms the session_id does NOT exist
+// (account was created before the users table existed)
 export async function isLegacyAccount(sessionId: string): Promise<boolean> {
-  const { data } = await supabase
-    .from('users')
-    .select('id')
-    .eq('session_id', sessionId)
-    .maybeSingle()
-  return !data
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .eq('session_id', sessionId)
+      .maybeSingle()
+    // If there's any error (network, auth, etc.) do NOT clear the session
+    if (error) return false
+    return data === null
+  } catch {
+    return false
+  }
 }
 
 export function getSession(): { name: string; sessionId: string } | null {
