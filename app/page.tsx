@@ -76,12 +76,20 @@ export default function HomePage() {
           <p className="text-gray-500 text-lg mb-8">
             Organizează un meci sau alătură-te unuia în orașul tău
           </p>
-          <Link
-            href="/create"
-            className="btn-gradient inline-block px-8 py-4 text-base font-bold"
-          >
-            Creează un meci
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/create"
+              className="btn-gradient inline-block px-8 py-4 text-base font-bold"
+            >
+              Organizează un meci
+            </Link>
+            <a
+              href="#games"
+              className="inline-block px-8 py-4 text-base font-semibold rounded-full bg-white border border-black/[0.08] text-gray-700 hover:border-green-400 hover:text-green-700 transition-all shadow-sm"
+            >
+              Explorează meciuri
+            </a>
+          </div>
         </div>
       </section>
 
@@ -137,7 +145,7 @@ export default function HomePage() {
       )}
 
       {/* Games Grid */}
-      <section className="max-w-6xl mx-auto px-4 pb-16">
+      <section id="games" className="max-w-6xl mx-auto px-4 pb-16">
         {loading ? (
           <div className="text-center py-20 text-gray-400">Loading games...</div>
         ) : filtered.length === 0 ? (

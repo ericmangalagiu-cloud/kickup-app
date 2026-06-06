@@ -1,8 +1,13 @@
 export function getSession(): { name: string; sessionId: string } | null {
   if (typeof window === 'undefined') return null
   const name = localStorage.getItem('kickup_name')
-  const sessionId = localStorage.getItem('kickup_session_id')
-  if (!name || !sessionId) return null
+  let sessionId = localStorage.getItem('kickup_session_id')
+  if (!name) return null
+  // If name exists but sessionId is missing (e.g. cleared), generate one
+  if (!sessionId) {
+    sessionId = crypto.randomUUID()
+    localStorage.setItem('kickup_session_id', sessionId)
+  }
   return { name, sessionId }
 }
 
@@ -32,7 +37,7 @@ export function hashColor(name: string): string {
     hash = name.charCodeAt(i) + ((hash << 5) - hash)
   }
   const colors = [
-    '#7c3aed', '#a855f7', '#ec4899', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'
+    '#16a34a', '#0d9488', '#0891b2', '#7c3aed', '#ea580c', '#d97706', '#dc2626'
   ]
   return colors[Math.abs(hash) % colors.length]
 }

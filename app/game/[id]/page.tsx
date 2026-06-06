@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Pencil, Crown, Share2, MapPin, Calendar, Clock, Users, Banknote, Target, Lock } from 'lucide-react'
+import { ArrowLeft, Pencil, Crown, Share2, MapPin, Calendar, Clock, Users, Banknote, Target, Lock, Trash2 } from 'lucide-react'
 import { supabase, Game, Player } from '@/lib/supabase'
 import { getSession, getInitials, hashColor } from '@/lib/session'
 import { formatDate, formatTime, timeAgo } from '@/lib/utils'
@@ -92,6 +92,12 @@ export default function GamePage() {
     toast({ title: 'Te-ai înscris!', description: 'Ești în meci.' })
   }
 
+  async function deleteGame() {
+    if (!confirm('Ești sigur că vrei să ștergi acest meci? Această acțiune nu poate fi anulată.')) return
+    await supabase.from('games').delete().eq('id', id)
+    router.push('/')
+  }
+
   async function confirmOptOut() {
     if (!myPlayer) return
     await supabase.from('players').update({ status: 'opted_out', opt_out_reason: optOutReason || null }).eq('id', myPlayer.id)
@@ -161,7 +167,7 @@ export default function GamePage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 animate-fade-in">
       <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-700 transition-colors mb-6">
-        <ArrowLeft size={16} /> All Games
+        <ArrowLeft size={16} /> Toate meciurile
       </Link>
 
       {/* Header */}
@@ -288,10 +294,20 @@ export default function GamePage() {
       {/* Share Button */}
       <button
         onClick={shareGame}
-        className="w-full flex items-center justify-center gap-2 py-3 bg-white rounded-full text-gray-500 hover:text-gray-800 transition-colors text-sm font-medium border border-black/[0.08] hover:border-black/[0.15] shadow-sm"
+        className="w-full flex items-center justify-center gap-2 py-3 bg-white rounded-full text-gray-500 hover:text-gray-800 transition-colors text-sm font-medium border border-black/[0.08] hover:border-black/[0.15] shadow-sm mb-3"
       >
         <Share2 size={16} /> Distribuie meciul
       </button>
+
+      {/* Delete button — organizer only */}
+      {isOrganizer && (
+        <button
+          onClick={deleteGame}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-full border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 transition-all text-sm font-medium"
+        >
+          <Trash2 size={15} /> Șterge meciul
+        </button>
+      )}
 
       {/* Opt-out Modal */}
       {optOutModal && (
