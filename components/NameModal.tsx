@@ -67,12 +67,7 @@ export function NameModal() {
         : await logIn(name.trim(), password)
 
       if (!result.success) {
-        if (mode === 'signup' && result.error?.includes('deja folosit')) {
-          // Name exists → auto-switch to login and keep the name
-          switchModeKeepName('login', 'Nume deja înregistrat. Introdu parola ta.')
-        } else {
-          setError(result.error || 'Eroare.')
-        }
+        setError(result.error || 'Eroare.')
         setLoading(false)
         return
       }
@@ -158,9 +153,18 @@ export function NameModal() {
           </div>
 
           {error && (
-            <p className="text-red-500 text-sm bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-              {error}
-            </p>
+            <div className="bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+              <p className="text-red-500 text-sm">{error}</p>
+              {mode === 'signup' && error.includes('deja folosit') && (
+                <button
+                  type="button"
+                  onClick={() => switchMode('login')}
+                  className="mt-1.5 text-sm font-semibold text-green-600 hover:underline"
+                >
+                  Autentifică-te cu parola ta →
+                </button>
+              )}
+            </div>
           )}
 
           <button
