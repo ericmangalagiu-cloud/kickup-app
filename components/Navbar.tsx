@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { ChevronDown, MapPin } from 'lucide-react'
-import { getSession, updateName, getInitials } from '@/lib/session'
+import { getSession, getInitials } from '@/lib/session'
 import { useNameModal } from '@/hooks/useNameModal'
 import { useCityStore, ROMANIAN_CITIES } from '@/hooks/useCityStore'
 
