@@ -42,6 +42,17 @@ export default function GamePage() {
       setUnlocked(localStorage.getItem(key) === 'true')
     }
     fetchGame()
+
+    // Re-read session when name is set via the modal
+    function onSessionUpdated() {
+      const updated = getSession()
+      setSession(updated)
+      if (updated) {
+        setUnlocked(localStorage.getItem(`kickup_unlocked_${id}`) === 'true')
+      }
+    }
+    window.addEventListener('session-updated', onSessionUpdated)
+    return () => window.removeEventListener('session-updated', onSessionUpdated)
   }, [id])
 
   useEffect(() => {
