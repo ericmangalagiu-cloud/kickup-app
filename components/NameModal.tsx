@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
-import { getSession, signUp, logIn } from '@/lib/session'
+import { getSession, signUp, logIn, isLegacyAccount } from '@/lib/session'
 import { useNameModal } from '@/hooks/useNameModal'
 
 type Mode = 'signup' | 'login'
@@ -20,7 +20,19 @@ export function NameModal() {
   useEffect(() => {
     setMounted(true)
     const session = getSession()
-    if (!session) open()
+    if (!session) {
+      open()
+    } else {
+      // Account exists in localStorage but not in Supabase (created before users table)
+      isLegacyAccount(session.sessionId).then(legacy => {
+        if (legacy) {
+          // Clear stale local session and force re-registration
+          localStorage.removeItem('kickup_name')
+          localStorage.removeItem('kickup_session_id')
+          open()
+        }
+      })
+    }
   }, [])
 
   useEffect(() => {

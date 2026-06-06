@@ -94,10 +94,22 @@ export function Navbar() {
                 </Link>
                 <button
                   onClick={() => { setAccountOpen(false); open() }}
-                  className="text-sm text-gray-400 hover:text-gray-600 transition-colors w-full text-left"
+                  className="text-sm text-gray-400 hover:text-gray-600 transition-colors w-full text-left mb-2"
                 >
                   Schimbă contul
                 </button>
+                <div className="border-t border-black/[0.05] pt-2">
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('kickup_name')
+                      localStorage.removeItem('kickup_session_id')
+                      window.location.href = '/'
+                    }}
+                    className="text-sm text-red-400 hover:text-red-600 transition-colors w-full text-left"
+                  >
+                    Deconectare
+                  </button>
+                </div>
               </div>
             )}
           </div>
