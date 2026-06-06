@@ -96,7 +96,7 @@ export function Navbar() {
                   onClick={() => { setAccountOpen(false); open() }}
                   className="text-sm text-gray-400 hover:text-gray-600 transition-colors w-full text-left"
                 >
-                  Schimbă numele
+                  Schimbă contul
                 </button>
               </div>
             )}

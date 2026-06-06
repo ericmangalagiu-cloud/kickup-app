@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { getSession } from '@/lib/session'
 import { ROMANIAN_CITIES } from '@/hooks/useCityStore'
@@ -16,6 +16,7 @@ export default function EditGamePage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [form, setForm] = useState({
     name: '', location: '', city: '', date: '', start_time: '', end_time: '',
     level: '', num_teams: '2', players_per_team: '7', price: '',
@@ -174,7 +175,12 @@ export default function EditGamePage() {
         {form.is_private && (
           <div>
             <label className={labelClass}>Parolă</label>
-            <input type="password" className={inputClass} value={form.password} onChange={e => set('password', e.target.value)} />
+            <div className="relative">
+              <input type={showPassword ? 'text' : 'password'} className={inputClass + ' pr-12'} value={form.password} onChange={e => set('password', e.target.value)} />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1">
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
         )}
         <button type="submit" disabled={saving} className="btn-gradient w-full py-4 font-bold text-base disabled:opacity-50">

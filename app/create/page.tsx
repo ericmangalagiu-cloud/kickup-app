@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { getSession } from '@/lib/session'
 import { useNameModal } from '@/hooks/useNameModal'
@@ -15,6 +15,7 @@ export default function CreatePage() {
   const router = useRouter()
   const { open } = useNameModal()
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [form, setForm] = useState({
     name: '', location: '', city: '', date: '', start_time: '', end_time: '',
     level: '', num_teams: '2', players_per_team: '7', price: '',
@@ -157,7 +158,12 @@ export default function CreatePage() {
         {form.is_private && (
           <div className="animate-fade-in">
             <label className={labelClass}>Parolă *</label>
-            <input type="password" className={inputClass} placeholder="Setează o parolă pentru meci" value={form.password} onChange={e => set('password', e.target.value)} />
+            <div className="relative">
+              <input type={showPassword ? 'text' : 'password'} className={inputClass + ' pr-12'} placeholder="Setează o parolă pentru meci" value={form.password} onChange={e => set('password', e.target.value)} />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1">
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
         )}
         <button
