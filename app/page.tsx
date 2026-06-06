@@ -70,17 +70,17 @@ export default function HomePage() {
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(22,163,74,0.06), transparent)' }} />
         <div className="relative max-w-3xl mx-auto">
           <h1 className="text-5xl sm:text-6xl font-extrabold mb-4 leading-tight text-gray-900">
-            <span className="gradient-text">Find Your</span>
-            <br />Next Game
+            <span className="gradient-text">Fotbal pickup</span>
+            <br />în România
           </h1>
           <p className="text-gray-500 text-lg mb-8">
-            Join pickup football games near you
+            Organizează un meci sau alătură-te unuia în orașul tău
           </p>
           <Link
             href="/create"
             className="btn-gradient inline-block px-8 py-4 text-base font-bold"
           >
-            Create a Game
+            Creează un meci
           </Link>
         </div>
       </section>
@@ -90,7 +90,7 @@ export default function HomePage() {
         <div className="bg-white rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-center shadow-sm border border-black/[0.06]">
           <input
             type="text"
-            placeholder="Search by game name..."
+            placeholder="Caută după numele meciului..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="flex-1 px-4 py-2.5 rounded-xl bg-gray-50 border border-black/[0.08] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent w-full sm:w-auto transition-all"
@@ -130,8 +130,8 @@ export default function HomePage() {
       {selectedCity && (
         <div className="max-w-6xl mx-auto px-4 mb-4">
           <p className="text-sm text-gray-500">
-            Showing games in <span className="font-semibold text-green-700">{selectedCity}</span>
-            {' '}— use the city selector in the top right to change
+            Meciuri în <span className="font-semibold text-green-700">{selectedCity}</span>
+            {' '}— schimbă orașul din selectorul din dreapta sus
           </p>
         </div>
       )}
@@ -148,12 +148,12 @@ export default function HomePage() {
                 <path d="M12 8v4l3 3"/>
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">No games found</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Niciun meci găsit</h3>
             <p className="text-gray-400 mb-6">
-              {selectedCity ? `No upcoming games in ${selectedCity} — be the first!` : 'No upcoming games — be the first to create one!'}
+              {selectedCity ? `Nu există meciuri în ${selectedCity} — fii primul care organizează!` : 'Nu există meciuri — fii primul care organizează!'}
             </p>
             <Link href="/create" className="btn-gradient inline-block px-6 py-3 font-semibold">
-              Create a Game
+              Creează un meci
             </Link>
           </div>
         ) : (

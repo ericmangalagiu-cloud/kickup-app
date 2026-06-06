@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KickUp — Find Your Next Game",
-  description: "Join pickup football games near you",
+  title: "KickUp — Fotbal de cartier în România",
+  description: "Organizează și alătură-te meciurilor de fotbal pickup din România.",
 };
 
 export default function RootLayout({

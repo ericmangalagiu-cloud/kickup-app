@@ -89,7 +89,7 @@ export default function GamePage() {
     })
     await fetchPlayers()
     setJoining(false)
-    toast({ title: 'Joined!', description: "You're in the game" })
+    toast({ title: 'Te-ai înscris!', description: 'Ești în meci.' })
   }
 
   async function confirmOptOut() {
@@ -98,7 +98,7 @@ export default function GamePage() {
     setOptOutModal(false)
     setOptOutReason('')
     await fetchPlayers()
-    toast({ title: 'Opted out', description: 'Sorry to see you go!' })
+    toast({ title: 'Ai renunțat', description: 'Sperăm să te vedem data viitoare!' })
   }
 
   function checkPassword(e: React.FormEvent) {
@@ -115,7 +115,7 @@ export default function GamePage() {
 
   async function shareGame() {
     await navigator.clipboard.writeText(window.location.href)
-    toast({ title: 'Link copied!', description: 'Share it with your friends' })
+    toast({ title: 'Link copiat!', description: 'Trimite-l prietenilor tăi.' })
   }
 
   if (loading) {
@@ -132,8 +132,8 @@ export default function GamePage() {
           <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
             <Lock size={24} className="text-gray-500" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">This game is private</h2>
-          <p className="text-gray-400 text-sm mb-6">Enter the password to view this game</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Meci privat</h2>
+          <p className="text-gray-400 text-sm mb-6">Introduceți parola pentru a vedea detaliile</p>
           <form onSubmit={checkPassword} className="space-y-4">
             <input
               type="password"
@@ -142,8 +142,8 @@ export default function GamePage() {
               placeholder="Password"
               className={`w-full px-4 py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all ${passwordError ? 'border-red-400 animate-shake' : 'border-black/[0.08]'}`}
             />
-            {passwordError && <p className="text-red-500 text-sm">Wrong password, try again</p>}
-            <button type="submit" className="btn-gradient w-full py-3 font-semibold">Enter</button>
+            {passwordError && <p className="text-red-500 text-sm">Parolă greșită, încearcă din nou</p>}
+            <button type="submit" className="btn-gradient w-full py-3 font-semibold">Intră</button>
           </form>
         </div>
       </div>
@@ -187,14 +187,14 @@ export default function GamePage() {
         <p className="flex items-center gap-2 text-gray-700"><Target size={14} className="text-green-600 flex-shrink-0" />{game.level ? game.level.charAt(0).toUpperCase() + game.level.slice(1) : 'Open to all'}</p>
         <div className="flex items-center gap-2 pt-1 border-t border-black/[0.05]">
           <Crown size={14} className="text-amber-500" />
-          <span className="text-gray-600">Organizer: <span className="text-gray-900 font-medium">{game.organizer_name}</span></span>
+          <span className="text-gray-600">Organizator: <span className="text-gray-900 font-medium">{game.organizer_name}</span></span>
         </div>
       </div>
 
       {/* Players */}
       <div className="bg-white rounded-2xl p-5 mb-6 shadow-sm border border-black/[0.07]">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-gray-900 font-bold text-lg">Players ({activePlayers.length} / {totalSpots})</h2>
+          <h2 className="text-gray-900 font-bold text-lg">Jucători ({activePlayers.length} / {totalSpots})</h2>
         </div>
         {/* Progress bar */}
         <div className="h-2 rounded-full mb-5 overflow-hidden bg-gray-100">
@@ -224,21 +224,21 @@ export default function GamePage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-gray-900 text-sm font-medium">{p.name}</span>
-                  {isMe && <span className="ml-2 text-xs text-green-600">you</span>}
+                  {isMe && <span className="ml-2 text-xs text-green-600">tu</span>}
                 </div>
                 <span className="text-xs text-gray-400">{timeAgo(p.joined_at)}</span>
               </div>
             )
           })}
           {activePlayers.length === 0 && (
-            <p className="text-gray-400 text-sm text-center py-4">No players yet — be the first!</p>
+            <p className="text-gray-400 text-sm text-center py-4">Niciun jucător încă — fii primul!</p>
           )}
         </div>
         {/* Opted out */}
         {optedOut.length > 0 && (
           <details className="mt-4">
             <summary className="text-sm text-gray-400 cursor-pointer hover:text-gray-600 transition-colors">
-              Opted out ({optedOut.length})
+              Au renunțat ({optedOut.length})
             </summary>
             <div className="mt-2 space-y-2">
               {optedOut.map(p => (
@@ -266,7 +266,7 @@ export default function GamePage() {
               disabled={isFull || joining || !session}
               className="btn-gradient w-full py-4 font-bold text-base mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {joining ? 'Joining...' : isFull ? 'Game Full' : 'Join Game'}
+              {joining ? 'Se înscrie...' : isFull ? 'Meci complet' : 'Înscrie-te'}
             </button>
           )}
           {hasJoined && (
@@ -274,12 +274,12 @@ export default function GamePage() {
               onClick={() => setOptOutModal(true)}
               className="w-full py-4 font-bold text-base mb-4 rounded-full border border-red-300 text-red-500 hover:bg-red-50 transition-all"
             >
-              Can&apos;t Make It
+              Nu pot veni
             </button>
           )}
           {hasOptedOut && (
             <button disabled className="w-full py-4 font-bold text-base mb-4 rounded-full border border-gray-200 text-gray-400 cursor-not-allowed">
-              You opted out
+              Ai renunțat
             </button>
           )}
         </>
@@ -290,19 +290,19 @@ export default function GamePage() {
         onClick={shareGame}
         className="w-full flex items-center justify-center gap-2 py-3 bg-white rounded-full text-gray-500 hover:text-gray-800 transition-colors text-sm font-medium border border-black/[0.08] hover:border-black/[0.15] shadow-sm"
       >
-        <Share2 size={16} /> Share Game
+        <Share2 size={16} /> Distribuie meciul
       </button>
 
       {/* Opt-out Modal */}
       {optOutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm animate-fade-in px-4">
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full animate-slide-up shadow-xl border border-black/[0.07]">
-            <h3 className="text-xl font-bold text-gray-900 mb-1">Sorry to hear that!</h3>
-            <p className="text-gray-500 text-sm mb-4">Let the organizer know why (optional)</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-1">Ne pare rău să auzim asta!</h3>
+            <p className="text-gray-500 text-sm mb-4">Spune-i organizatorului de ce (opțional)</p>
             <textarea
               value={optOutReason}
               onChange={e => setOptOutReason(e.target.value)}
-              placeholder="e.g. Work came up, injured..."
+              placeholder="ex: Am treabă, sunt accidentat..."
               rows={3}
               className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-black/[0.08] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none mb-4"
             />
@@ -311,7 +311,7 @@ export default function GamePage() {
                 onClick={() => setOptOutModal(false)}
                 className="flex-1 py-3 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors font-medium"
               >
-                Nevermind
+                Înapoi
               </button>
               <button
                 onClick={confirmOptOut}

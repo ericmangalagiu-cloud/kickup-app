@@ -41,16 +41,16 @@ export function NameModal() {
             <circle cx="12" cy="7" r="4"/>
           </svg>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">What&apos;s your name?</h2>
+        <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Cum te cheamă?</h2>
         <p className="text-gray-400 text-center text-sm mb-6">
-          We&apos;ll use this to show you in games
+          Numele tău va apărea în meciurile la care participi
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
-            placeholder="e.g. Marco Rossi"
+            placeholder="ex: Andrei Popescu"
             autoFocus
             className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-black/[0.08] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
           />
@@ -59,7 +59,7 @@ export function NameModal() {
             disabled={!name.trim()}
             className="btn-gradient w-full py-3 font-semibold text-base disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Let&apos;s Play
+            Hai să jucăm
           </button>
         </form>
       </div>

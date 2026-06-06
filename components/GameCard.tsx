@@ -51,8 +51,8 @@ export function GameCard({ game, spotsLeft, totalSpots }: GameCardProps) {
           </div>
         </div>
         <div className="mt-4 pt-3 border-t border-black/[0.05] flex items-center justify-between">
-          <p className="text-xs text-gray-400">by {game.organizer_name}</p>
-          <span className="text-xs text-green-600 group-hover:text-green-700 transition-colors font-medium">View</span>
+          <p className="text-xs text-gray-400">organizat de {game.organizer_name}</p>
+          <span className="text-xs text-green-600 group-hover:text-green-700 transition-colors font-medium">Vezi</span>
         </div>
       </div>
     </Link>

@@ -77,12 +77,12 @@ export default function EditGamePage() {
   }
 
   async function cancelGame() {
-    if (!confirm('Are you sure you want to cancel this game? This cannot be undone.')) return
+    if (!confirm('Ești sigur că vrei să anulezi meciul? Această acțiune nu poate fi anulată.')) return
     await supabase.from('games').delete().eq('id', id)
     router.push('/')
   }
 
-  if (loading) return <div className="text-center py-40 text-gray-400">Loading...</div>
+  if (loading) return <div className="text-center py-40 text-gray-400">Se încarcă...</div>
 
   const inputClass = "w-full px-4 py-3 rounded-xl bg-gray-50 border border-black/[0.08] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
   const labelClass = "block text-sm font-medium text-gray-700 mb-1.5"
@@ -90,28 +90,28 @@ export default function EditGamePage() {
   return (
     <div className="max-w-xl mx-auto px-4 py-10 animate-fade-in">
       <Link href={`/game/${id}`} className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-700 transition-colors mb-8">
-        <ArrowLeft size={16} /> Back to Game
+        <ArrowLeft size={16} /> Înapoi la meci
       </Link>
-      <h1 className="text-3xl font-extrabold text-gray-900 mb-8">Edit Game</h1>
+      <h1 className="text-3xl font-extrabold text-gray-900 mb-8">Editează meciul</h1>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 space-y-5 shadow-sm border border-black/[0.07]">
         <div>
-          <label className={labelClass}>Game Name *</label>
+          <label className={labelClass}>Numele meciului *</label>
           <input required className={inputClass} value={form.name} onChange={e => set('name', e.target.value)} />
         </div>
         <div>
-          <label className={labelClass}>Location *</label>
+          <label className={labelClass}>Locație *</label>
           <input required className={inputClass} value={form.location} onChange={e => set('location', e.target.value)} />
         </div>
         <div>
-          <label className={labelClass}>City *</label>
+          <label className={labelClass}>Oraș *</label>
           <select
             required
             className={inputClass + ' cursor-pointer'}
             value={form.city}
             onChange={e => set('city', e.target.value)}
           >
-            <option value="">Select a city...</option>
+            <option value="">Alege un oraș...</option>
             {ROMANIAN_CITIES.map(city => (
               <option key={city} value={city}>{city}</option>
             ))}
@@ -119,41 +119,41 @@ export default function EditGamePage() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>Date *</label>
+            <label className={labelClass}>Data *</label>
             <input required type="date" min={today} className={inputClass} value={form.date} onChange={e => set('date', e.target.value)} />
           </div>
           <div>
-            <label className={labelClass}>Level</label>
+            <label className={labelClass}>Nivel</label>
             <select className={inputClass + ' cursor-pointer'} value={form.level} onChange={e => set('level', e.target.value)}>
-              <option value="">Not specified</option>
-              <option value="beginner">Beginner</option>
-              <option value="intermediate">Intermediate</option>
-              <option value="advanced">Advanced</option>
+              <option value="">Nespecificat</option>
+              <option value="beginner">Începători</option>
+              <option value="intermediate">Intermediar</option>
+              <option value="advanced">Avansat</option>
             </select>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>Start Time *</label>
+            <label className={labelClass}>Ora de start *</label>
             <input required type="time" className={inputClass} value={form.start_time} onChange={e => set('start_time', e.target.value)} />
           </div>
           <div>
-            <label className={labelClass}>End Time *</label>
+            <label className={labelClass}>Ora de final *</label>
             <input required type="time" className={inputClass} value={form.end_time} onChange={e => set('end_time', e.target.value)} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>Number of Teams *</label>
+            <label className={labelClass}>Număr de echipe *</label>
             <input required type="number" min="2" max="6" className={inputClass} value={form.num_teams} onChange={e => set('num_teams', e.target.value)} />
           </div>
           <div>
-            <label className={labelClass}>Players per Team *</label>
+            <label className={labelClass}>Jucători per echipă *</label>
             <input required type="number" min="3" max="15" className={inputClass} value={form.players_per_team} onChange={e => set('players_per_team', e.target.value)} />
           </div>
         </div>
         <div>
-          <label className={labelClass}>Price *</label>
+          <label className={labelClass}>Contribuție *</label>
           <input required className={inputClass} value={form.price} onChange={e => set('price', e.target.value)} />
         </div>
         <div>
@@ -168,24 +168,24 @@ export default function EditGamePage() {
                 style={{ left: form.is_private ? '1.75rem' : '0.25rem' }}
               />
             </div>
-            <span className="text-sm text-gray-700">Private game</span>
+            <span className="text-sm text-gray-700">Meci privat</span>
           </label>
         </div>
         {form.is_private && (
           <div>
-            <label className={labelClass}>Password</label>
+            <label className={labelClass}>Parolă</label>
             <input type="password" className={inputClass} value={form.password} onChange={e => set('password', e.target.value)} />
           </div>
         )}
         <button type="submit" disabled={saving} className="btn-gradient w-full py-4 font-bold text-base disabled:opacity-50">
-          {saving ? 'Saving...' : 'Save Changes'}
+          {saving ? 'Se salvează...' : 'Salvează modificările'}
         </button>
         <button
           type="button"
           onClick={cancelGame}
           className="w-full py-4 rounded-full border border-red-200 text-red-500 hover:bg-red-50 transition-all font-bold"
         >
-          Cancel Game
+          Anulează meciul
         </button>
       </form>
     </div>

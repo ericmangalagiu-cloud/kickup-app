@@ -47,7 +47,7 @@ export function Navbar() {
             className="flex items-center gap-1.5 px-4 py-2 rounded-full glass border border-black/[0.08] text-sm font-medium text-gray-700 hover:border-green-400 hover:text-green-700 transition-all"
           >
             <MapPin size={14} className="text-green-600" />
-            {selectedCity || 'Select city'}
+            {selectedCity || 'Alege orașul'}
             <ChevronDown size={14} className={`transition-transform ${cityOpen ? 'rotate-180' : ''}`} />
           </button>
           {cityOpen && (
@@ -56,7 +56,7 @@ export function Navbar() {
                 onClick={() => { setCity(''); setCityOpen(false) }}
                 className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-green-50 ${!selectedCity ? 'text-green-700 font-semibold bg-green-50' : 'text-gray-600'}`}
               >
-                All cities
+                Toate orașele
               </button>
               {ROMANIAN_CITIES.map(city => (
                 <button
@@ -84,19 +84,19 @@ export function Navbar() {
             {accountOpen && (
               <div className="absolute right-0 top-11 bg-white rounded-xl p-3 w-48 shadow-xl border border-black/[0.07] animate-fade-in">
                 <p className="text-gray-900 font-semibold text-sm mb-1">{session.name}</p>
-                <p className="text-gray-400 text-xs mb-3">Member</p>
+                <p className="text-gray-400 text-xs mb-3">Jucător</p>
                 <Link
                   href="/create"
                   onClick={() => setAccountOpen(false)}
                   className="block text-sm text-green-600 hover:text-green-700 transition-colors mb-2 font-medium"
                 >
-                  Create a game
+                  Creează un meci
                 </Link>
                 <button
                   onClick={() => { setAccountOpen(false); open() }}
                   className="text-sm text-gray-400 hover:text-gray-600 transition-colors w-full text-left"
                 >
-                  Change name
+                  Schimbă numele
                 </button>
               </div>
             )}
