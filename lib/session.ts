@@ -12,7 +12,7 @@ export async function signUp(name: string, password: string): Promise<{ success:
 
   if (checkError) {
     console.error('signUp check error:', checkError)
-    return { success: false, error: 'Eroare de conexiune. Verifică internetul și încearcă din nou.' }
+    return { success: false, error: `Eroare DB: ${checkError.message} (${checkError.code})` }
   }
 
   if (existing) {
@@ -30,11 +30,10 @@ export async function signUp(name: string, password: string): Promise<{ success:
 
   if (error) {
     console.error('signUp insert error:', error)
-    // Unique violation — race condition, someone registered same name just now
     if (error.code === '23505') {
       return { success: false, error: 'Acest nume este deja folosit. Alege altul sau autentifică-te.' }
     }
-    return { success: false, error: 'Eroare la înregistrare. Încearcă din nou.' }
+    return { success: false, error: `Eroare insert: ${error.message} (${error.code})` }
   }
 
   localStorage.setItem('kickup_name', name.trim())

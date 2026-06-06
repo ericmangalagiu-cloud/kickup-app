@@ -15,7 +15,7 @@ export default function HomePage() {
   const [search, setSearch] = useState('')
   const [level, setLevel] = useState('All')
   const [showAvailable, setShowAvailable] = useState(false)
-  const [showPrivate, setShowPrivate] = useState(false)
+  const [showAll, setShowAll] = useState(false)
   const [games, setGames] = useState<Game[]>([])
   const [playerCounts, setPlayerCounts] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
@@ -23,7 +23,7 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchGames()
-  }, [selectedCity, showPrivate])
+  }, [selectedCity, showAll])
 
   async function fetchGames() {
     setLoading(true)
@@ -32,8 +32,12 @@ export default function HomePage() {
       .from('games')
       .select('*')
       .gte('date', today)
-      .eq('is_private', showPrivate)
       .order('date', { ascending: true })
+
+    // By default only public games; toggle shows all (public + private)
+    if (!showAll) {
+      query = query.eq('is_private', false)
+    }
 
     if (selectedCity) {
       query = query.eq('city', selectedCity)
@@ -138,17 +142,17 @@ export default function HomePage() {
             </label>
             <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer">
               <div
-                onClick={() => setShowPrivate(!showPrivate)}
+                onClick={() => setShowAll(!showAll)}
                 className="w-10 h-5 rounded-full transition-all cursor-pointer relative"
-                style={{ background: showPrivate ? '#16a34a' : '#e5e7eb' }}
+                style={{ background: showAll ? '#16a34a' : '#e5e7eb' }}
               >
                 <div
                   className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow-sm"
-                  style={{ left: showPrivate ? '1.25rem' : '0.125rem' }}
+                  style={{ left: showAll ? '1.25rem' : '0.125rem' }}
                 />
               </div>
-              <Lock size={13} className={showPrivate ? 'text-green-600' : 'text-gray-400'} />
-              Meciuri private
+              <Lock size={13} className={showAll ? 'text-green-600' : 'text-gray-400'} />
+              Inclusiv private
             </label>
           </div>
         </div>
