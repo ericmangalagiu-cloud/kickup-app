@@ -2,14 +2,19 @@
 
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
+import { ChevronDown, MapPin } from 'lucide-react'
 import { getSession, updateName, getInitials } from '@/lib/session'
 import { useNameModal } from '@/hooks/useNameModal'
+import { useCityStore, ROMANIAN_CITIES } from '@/hooks/useCityStore'
 
 export function Navbar() {
   const [session, setSession] = useState<{ name: string; sessionId: string } | null>(null)
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [accountOpen, setAccountOpen] = useState(false)
+  const [cityOpen, setCityOpen] = useState(false)
+  const accountRef = useRef<HTMLDivElement>(null)
+  const cityRef = useRef<HTMLDivElement>(null)
   const { open } = useNameModal()
+  const { selectedCity, setCity } = useCityStore()
 
   useEffect(() => {
     const s = getSession()
@@ -21,43 +26,77 @@ export function Navbar() {
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false)
-      }
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) setAccountOpen(false)
+      if (cityRef.current && !cityRef.current.contains(e.target as Node)) setCityOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-white/[0.06] px-4 h-16 flex items-center justify-between">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-black/[0.06] px-4 h-16 flex items-center justify-between">
       <Link href="/" className="gradient-text text-xl font-bold tracking-tight">
-        ⚽ KickUp
+        KickUp
       </Link>
+
       <div className="flex items-center gap-3">
-        <Link
-          href="/create"
-          className="btn-gradient px-4 py-2 text-sm font-semibold hidden sm:block"
-        >
-          Create Game
-        </Link>
+        {/* City Selector */}
+        <div className="relative" ref={cityRef}>
+          <button
+            onClick={() => setCityOpen(!cityOpen)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full glass border border-black/[0.08] text-sm font-medium text-gray-700 hover:border-green-400 hover:text-green-700 transition-all"
+          >
+            <MapPin size={14} className="text-green-600" />
+            {selectedCity || 'Select city'}
+            <ChevronDown size={14} className={`transition-transform ${cityOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {cityOpen && (
+            <div className="absolute right-0 top-11 bg-white rounded-2xl shadow-xl border border-black/[0.07] w-52 max-h-72 overflow-y-auto animate-fade-in z-50">
+              <button
+                onClick={() => { setCity(''); setCityOpen(false) }}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-green-50 ${!selectedCity ? 'text-green-700 font-semibold bg-green-50' : 'text-gray-600'}`}
+              >
+                All cities
+              </button>
+              {ROMANIAN_CITIES.map(city => (
+                <button
+                  key={city}
+                  onClick={() => { setCity(city); setCityOpen(false) }}
+                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-green-50 ${selectedCity === city ? 'text-green-700 font-semibold bg-green-50' : 'text-gray-700'}`}
+                >
+                  {city}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Account */}
         {session && (
-          <div className="relative" ref={dropdownRef}>
+          <div className="relative" ref={accountRef}>
             <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-600 to-pink-600 flex items-center justify-center text-white text-sm font-bold hover:opacity-90 transition-opacity"
+              onClick={() => setAccountOpen(!accountOpen)}
+              className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold hover:opacity-90 transition-opacity"
+              style={{ background: 'linear-gradient(135deg, #16a34a, #0d9488)' }}
             >
               {getInitials(session.name)}
             </button>
-            {dropdownOpen && (
-              <div className="absolute right-0 top-11 glass rounded-xl p-3 w-48 shadow-xl border border-white/[0.08] animate-fade-in">
-                <p className="text-white font-semibold text-sm mb-1">{session.name}</p>
-                <p className="text-zinc-500 text-xs mb-3">Beta member</p>
-                <button
-                  onClick={() => { setDropdownOpen(false); open() }}
-                  className="text-sm text-violet-400 hover:text-violet-300 transition-colors w-full text-left"
+            {accountOpen && (
+              <div className="absolute right-0 top-11 bg-white rounded-xl p-3 w-48 shadow-xl border border-black/[0.07] animate-fade-in">
+                <p className="text-gray-900 font-semibold text-sm mb-1">{session.name}</p>
+                <p className="text-gray-400 text-xs mb-3">Member</p>
+                <Link
+                  href="/create"
+                  onClick={() => setAccountOpen(false)}
+                  className="block text-sm text-green-600 hover:text-green-700 transition-colors mb-2 font-medium"
                 >
-                  Change name →
+                  Create a game
+                </Link>
+                <button
+                  onClick={() => { setAccountOpen(false); open() }}
+                  className="text-sm text-gray-400 hover:text-gray-600 transition-colors w-full text-left"
+                >
+                  Change name
                 </button>
               </div>
             )}

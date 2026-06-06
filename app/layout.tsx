@@ -26,13 +26,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`dark ${geistSans.variable} ${geistMono.variable}`}>
-      <body className="min-h-screen bg-[#0a0a0f] text-white">
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className="min-h-screen bg-background text-foreground">
         <Navbar />
         <main className="pt-16">{children}</main>
-        <footer className="py-8 text-center text-sm text-zinc-500">
-          KickUp · Beta · Made with ❤️
-        </footer>
         <NameModal />
         <Toaster />
       </body>

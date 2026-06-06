@@ -43,7 +43,6 @@
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
-  /* Animations */
   --animate-fade-in: fadeIn 0.5s ease-out;
   --animate-slide-up: slideUp 0.4s ease-out;
   --animate-shake: shake 0.5s ease-in-out;
@@ -68,38 +67,38 @@
 }
 
 :root {
-  --background: oklch(0.08 0.01 280);
-  --foreground: oklch(0.97 0 0);
-  --card: oklch(0.12 0.01 280);
-  --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.12 0.01 280);
-  --popover-foreground: oklch(0.97 0 0);
-  --primary: oklch(0.55 0.22 293);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.16 0.01 280);
-  --secondary-foreground: oklch(0.85 0 0);
-  --muted: oklch(0.16 0.01 280);
-  --muted-foreground: oklch(0.60 0 0);
-  --accent: oklch(0.55 0.22 293);
-  --accent-foreground: oklch(1 0 0);
+  --background: #f8fafb;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+  --primary: #16a34a;
+  --primary-foreground: #ffffff;
+  --secondary: #f0fdf4;
+  --secondary-foreground: #15803d;
+  --muted: #f1f5f9;
+  --muted-foreground: #6b7280;
+  --accent: #dcfce7;
+  --accent-foreground: #15803d;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.55 0.22 293);
+  --border: rgba(0, 0, 0, 0.08);
+  --input: rgba(0, 0, 0, 0.06);
+  --ring: #16a34a;
   --radius: 0.75rem;
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.12 0.01 280);
-  --sidebar-foreground: oklch(0.97 0 0);
-  --sidebar-primary: oklch(0.55 0.22 293);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.16 0.01 280);
-  --sidebar-accent-foreground: oklch(0.97 0 0);
-  --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.55 0.22 293);
+  --chart-1: #16a34a;
+  --chart-2: #059669;
+  --chart-3: #0d9488;
+  --chart-4: #0891b2;
+  --chart-5: #6366f1;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #111827;
+  --sidebar-primary: #16a34a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f0fdf4;
+  --sidebar-accent-foreground: #15803d;
+  --sidebar-border: rgba(0,0,0,0.08);
+  --sidebar-ring: #16a34a;
 }
 
 @layer base {
@@ -111,33 +110,33 @@
     font-family: var(--font-geist-sans), Inter, sans-serif;
   }
   html {
-    @apply font-sans;
-    color-scheme: dark;
+    color-scheme: light;
   }
 }
 
 @layer utilities {
   .glass {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.75);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   }
   .gradient-text {
-    background: linear-gradient(90deg, #7c3aed, #a855f7, #ec4899);
+    background: linear-gradient(90deg, #15803d, #16a34a, #0d9488);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
   .btn-gradient {
-    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    background: linear-gradient(135deg, #16a34a, #0d9488);
     color: white;
     border-radius: 9999px;
     transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.25);
+    box-shadow: 0 4px 15px rgba(22, 163, 74, 0.2);
   }
   .btn-gradient:hover {
-    background: linear-gradient(135deg, #6d28d9, #db2777);
-    box-shadow: 0 6px 25px rgba(124, 58, 237, 0.4);
+    background: linear-gradient(135deg, #15803d, #0f766e);
+    box-shadow: 0 6px 25px rgba(22, 163, 74, 0.35);
     transform: translateY(-1px);
   }
   .card-hover {
@@ -145,8 +144,8 @@
   }
   .card-hover:hover {
     transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 8px 30px rgba(124, 58, 237, 0.1);
+    border-color: rgba(22, 163, 74, 0.25);
+    box-shadow: 0 8px 30px rgba(22, 163, 74, 0.1);
   }
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out;

@@ -6,8 +6,9 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { supabase, Game } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import { getSession } from '@/lib/session'
+import { ROMANIAN_CITIES } from '@/hooks/useCityStore'
 
 export default function EditGamePage() {
   const params = useParams()
@@ -81,19 +82,19 @@ export default function EditGamePage() {
     router.push('/')
   }
 
-  if (loading) return <div className="text-center py-40 text-zinc-500">Loading...</div>
+  if (loading) return <div className="text-center py-40 text-gray-400">Loading...</div>
 
-  const inputClass = "w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.10] text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
-  const labelClass = "block text-sm font-medium text-zinc-300 mb-1.5"
+  const inputClass = "w-full px-4 py-3 rounded-xl bg-gray-50 border border-black/[0.08] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+  const labelClass = "block text-sm font-medium text-gray-700 mb-1.5"
 
   return (
     <div className="max-w-xl mx-auto px-4 py-10 animate-fade-in">
-      <Link href={`/game/${id}`} className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors mb-8">
+      <Link href={`/game/${id}`} className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-700 transition-colors mb-8">
         <ArrowLeft size={16} /> Back to Game
       </Link>
-      <h1 className="text-3xl font-extrabold text-white mb-8">Edit Game</h1>
+      <h1 className="text-3xl font-extrabold text-gray-900 mb-8">Edit Game</h1>
 
-      <form onSubmit={handleSubmit} className="glass rounded-2xl p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 space-y-5 shadow-sm border border-black/[0.07]">
         <div>
           <label className={labelClass}>Game Name *</label>
           <input required className={inputClass} value={form.name} onChange={e => set('name', e.target.value)} />
@@ -104,7 +105,17 @@ export default function EditGamePage() {
         </div>
         <div>
           <label className={labelClass}>City *</label>
-          <input required className={inputClass} value={form.city} onChange={e => set('city', e.target.value)} />
+          <select
+            required
+            className={inputClass + ' cursor-pointer'}
+            value={form.city}
+            onChange={e => set('city', e.target.value)}
+          >
+            <option value="">Select a city...</option>
+            {ROMANIAN_CITIES.map(city => (
+              <option key={city} value={city}>{city}</option>
+            ))}
+          </select>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -113,12 +124,7 @@ export default function EditGamePage() {
           </div>
           <div>
             <label className={labelClass}>Level</label>
-            <select
-              className={inputClass + ' cursor-pointer'}
-              style={{ colorScheme: 'dark' }}
-              value={form.level}
-              onChange={e => set('level', e.target.value)}
-            >
+            <select className={inputClass + ' cursor-pointer'} value={form.level} onChange={e => set('level', e.target.value)}>
               <option value="">Not specified</option>
               <option value="beginner">Beginner</option>
               <option value="intermediate">Intermediate</option>
@@ -154,15 +160,15 @@ export default function EditGamePage() {
           <label className="flex items-center gap-3 cursor-pointer">
             <div
               onClick={() => set('is_private', !form.is_private)}
-              className="w-12 h-6 rounded-full transition-all relative"
-              style={{ background: form.is_private ? '#7c3aed' : 'rgba(255,255,255,0.1)' }}
+              className="w-12 h-6 rounded-full transition-all relative flex-shrink-0"
+              style={{ background: form.is_private ? '#16a34a' : '#e5e7eb' }}
             >
               <div
-                className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all"
+                className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all shadow-sm"
                 style={{ left: form.is_private ? '1.75rem' : '0.25rem' }}
               />
             </div>
-            <span className="text-sm text-zinc-300">Private game</span>
+            <span className="text-sm text-gray-700">Private game</span>
           </label>
         </div>
         {form.is_private && (
@@ -172,12 +178,12 @@ export default function EditGamePage() {
           </div>
         )}
         <button type="submit" disabled={saving} className="btn-gradient w-full py-4 font-bold text-base disabled:opacity-50">
-          {saving ? 'Saving...' : 'Save Changes →'}
+          {saving ? 'Saving...' : 'Save Changes'}
         </button>
         <button
           type="button"
           onClick={cancelGame}
-          className="w-full py-4 rounded-full border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-all font-bold"
+          className="w-full py-4 rounded-full border border-red-200 text-red-500 hover:bg-red-50 transition-all font-bold"
         >
           Cancel Game
         </button>
