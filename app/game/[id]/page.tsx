@@ -295,9 +295,23 @@ export default function GamePage() {
             </button>
           )}
           {hasOptedOut && (
-            <button disabled className="w-full py-4 font-bold text-base mb-4 rounded-full border border-gray-200 text-gray-400 cursor-not-allowed">
-              Ai renunțat
-            </button>
+            <div className="flex gap-3 mb-4">
+              <button disabled className="flex-1 py-4 font-bold text-base rounded-full border border-gray-200 text-gray-400 cursor-not-allowed">
+                Ai renunțat
+              </button>
+              <button
+                onClick={async () => {
+                  if (!myPlayer) return
+                  await supabase.from('players').update({ status: 'active', opt_out_reason: null }).eq('id', myPlayer.id)
+                  await fetchPlayers()
+                  toast({ title: 'Bine ai revenit!', description: 'Ești din nou în meci.' })
+                }}
+                disabled={isFull}
+                className="flex-1 py-4 font-bold text-base rounded-full btn-gradient disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isFull ? 'Meci complet' : 'Înscrie-te din nou'}
+              </button>
+            </div>
           )}
         </>
       )}
