@@ -50,7 +50,14 @@ export default function CreatePage() {
       organizer_session_id: session.sessionId,
     }).select().single()
 
-    if (error) { alert('Error creating game: ' + error.message); setLoading(false); return }
+    if (error) {
+      const msg = error.message?.includes('Load failed') || error.message?.includes('fetch')
+        ? 'Cannot connect to database. Please make sure Supabase environment variables are configured in Vercel (NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY).'
+        : 'Error creating game: ' + error.message
+      alert(msg)
+      setLoading(false)
+      return
+    }
     router.push(`/game/${data.id}`)
   }
 
