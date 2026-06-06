@@ -143,7 +143,7 @@ export function NameModal() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={e => { setPassword(e.target.value); setError('') }}
-                placeholder={mode === 'signup' ? 'Minim 4 caractere' : 'Introdu parola'}
+                placeholder="Introdu parola"
                 disabled={loading}
                 className={inputClass + ' pr-12'}
               />

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Game } from '@/lib/supabase'
 import { formatDate, formatTime } from '@/lib/utils'
-import { MapPin, Calendar, Users, Banknote } from 'lucide-react'
+import { MapPin, Calendar, Users, Banknote, Lock } from 'lucide-react'
 
 interface GameCardProps {
   game: Game
@@ -28,6 +28,11 @@ export function GameCard({ game, spotsLeft, totalSpots }: GameCardProps) {
               {game.name}
             </h3>
             <div className="flex flex-col items-end gap-1 ml-2 flex-shrink-0">
+              {game.is_private && (
+                <span className="flex items-center gap-1 text-xs bg-gray-100 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">
+                  <Lock size={10} /> Privat
+                </span>
+              )}
               {isFull && (
                 <span className="text-xs bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-full">
                   Full

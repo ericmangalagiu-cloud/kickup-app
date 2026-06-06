@@ -37,10 +37,9 @@ export default function GamePage() {
   useEffect(() => {
     const s = getSession()
     setSession(s)
-    if (s) {
-      const key = `kickup_unlocked_${id}`
-      setUnlocked(localStorage.getItem(key) === 'true')
-    }
+    // Read unlocked state regardless of session (so password gate works without login)
+    const key = `kickup_unlocked_${id}`
+    setUnlocked(localStorage.getItem(key) === 'true')
     fetchGame()
 
     // Re-read session when name is set via the modal
@@ -66,8 +65,17 @@ export default function GamePage() {
   }, [id])
 
   async function fetchGame() {
-    const { data } = await supabase.from('games').select('*').eq('id', id).single()
-    if (!data) { router.push('/'); return }
+    const { data, error } = await supabase.from('games').select('*').eq('id', id).single()
+    if (!data) {
+      // Only redirect if it's a "not found" error, not a network/connection error
+      if (!error || error.code === 'PGRST116') {
+        router.push('/')
+      } else {
+        // Network error — show loading state briefly then retry
+        setTimeout(() => fetchGame(), 2000)
+      }
+      return
+    }
     setGame(data)
     await fetchPlayers()
     setLoading(false)
@@ -93,6 +101,15 @@ export default function GamePage() {
   async function joinGame() {
     if (!session) return
     setJoining(true)
+    // Check if this name is already active in the game (prevents duplicates from same-name accounts)
+    const nameTaken = activePlayers.some(
+      p => p.name.toLowerCase() === session.name.toLowerCase() && p.session_id !== session.sessionId
+    )
+    if (nameTaken) {
+      toast({ title: 'Ești deja în meci', description: 'Un jucător cu același nume este deja înscris.' })
+      setJoining(false)
+      return
+    }
     await supabase.from('players').insert({
       game_id: id,
       name: session.name,

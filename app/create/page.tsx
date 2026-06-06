@@ -97,7 +97,7 @@ export default function CreatePage() {
             ))}
           </select>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>Data *</label>
             <input required type="date" min={today} className={inputClass} value={form.date} onChange={e => set('date', e.target.value)} />
@@ -116,7 +116,7 @@ export default function CreatePage() {
             </select>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>Ora de start *</label>
             <input required type="time" className={inputClass} value={form.start_time} onChange={e => set('start_time', e.target.value)} />
@@ -126,7 +126,7 @@ export default function CreatePage() {
             <input required type="time" className={inputClass} value={form.end_time} onChange={e => set('end_time', e.target.value)} />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>Număr de echipe *</label>
             <input required type="number" min="2" max="6" className={inputClass} value={form.num_teams} onChange={e => set('num_teams', e.target.value)} />

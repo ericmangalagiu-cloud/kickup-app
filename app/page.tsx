@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Lock } from 'lucide-react'
 import { supabase, Game } from '@/lib/supabase'
 import { GameCard } from '@/components/GameCard'
 import { useCityStore } from '@/hooks/useCityStore'
@@ -14,6 +15,7 @@ export default function HomePage() {
   const [search, setSearch] = useState('')
   const [level, setLevel] = useState('All')
   const [showAvailable, setShowAvailable] = useState(false)
+  const [showPrivate, setShowPrivate] = useState(false)
   const [games, setGames] = useState<Game[]>([])
   const [playerCounts, setPlayerCounts] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
@@ -21,7 +23,7 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchGames()
-  }, [selectedCity])
+  }, [selectedCity, showPrivate])
 
   async function fetchGames() {
     setLoading(true)
@@ -30,7 +32,7 @@ export default function HomePage() {
       .from('games')
       .select('*')
       .gte('date', today)
-      .eq('is_private', false)
+      .eq('is_private', showPrivate)
       .order('date', { ascending: true })
 
     if (selectedCity) {
@@ -95,42 +97,60 @@ export default function HomePage() {
 
       {/* Filters */}
       <section className="max-w-6xl mx-auto px-4 mb-8">
-        <div className="bg-white rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-center shadow-sm border border-black/[0.06]">
-          <input
-            type="text"
-            placeholder="Caută după numele meciului..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="flex-1 px-4 py-2.5 rounded-xl bg-gray-50 border border-black/[0.08] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent w-full sm:w-auto transition-all"
-          />
-          <div className="flex gap-2 flex-wrap justify-center">
-            {levels.map(l => (
-              <button
-                key={l}
-                onClick={() => setLevel(l)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  level === l
-                    ? 'btn-gradient'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-black/[0.06]'
-                }`}
-              >
-                {l}
-              </button>
-            ))}
-          </div>
-          <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer whitespace-nowrap">
-            <div
-              onClick={() => setShowAvailable(!showAvailable)}
-              className="w-10 h-5 rounded-full transition-all cursor-pointer relative"
-              style={{ background: showAvailable ? '#16a34a' : '#e5e7eb' }}
-            >
-              <div
-                className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow-sm"
-                style={{ left: showAvailable ? '1.25rem' : '0.125rem' }}
-              />
+        <div className="bg-white rounded-2xl p-4 flex flex-col gap-4 shadow-sm border border-black/[0.06]">
+          <div className="flex flex-col sm:flex-row gap-4 items-center">
+            <input
+              type="text"
+              placeholder="Caută după numele meciului..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-gray-50 border border-black/[0.08] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent w-full sm:w-auto transition-all"
+            />
+            <div className="flex gap-2 flex-wrap justify-center">
+              {levels.map(l => (
+                <button
+                  key={l}
+                  onClick={() => setLevel(l)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                    level === l
+                      ? 'btn-gradient'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-black/[0.06]'
+                  }`}
+                >
+                  {l}
+                </button>
+              ))}
             </div>
-            Available only
-          </label>
+          </div>
+          <div className="flex flex-wrap gap-4 items-center border-t border-black/[0.05] pt-3">
+            <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer">
+              <div
+                onClick={() => setShowAvailable(!showAvailable)}
+                className="w-10 h-5 rounded-full transition-all cursor-pointer relative"
+                style={{ background: showAvailable ? '#16a34a' : '#e5e7eb' }}
+              >
+                <div
+                  className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow-sm"
+                  style={{ left: showAvailable ? '1.25rem' : '0.125rem' }}
+                />
+              </div>
+              Locuri disponibile
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer">
+              <div
+                onClick={() => setShowPrivate(!showPrivate)}
+                className="w-10 h-5 rounded-full transition-all cursor-pointer relative"
+                style={{ background: showPrivate ? '#16a34a' : '#e5e7eb' }}
+              >
+                <div
+                  className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow-sm"
+                  style={{ left: showPrivate ? '1.25rem' : '0.125rem' }}
+                />
+              </div>
+              <Lock size={13} className={showPrivate ? 'text-green-600' : 'text-gray-400'} />
+              Meciuri private
+            </label>
+          </div>
         </div>
       </section>
 
@@ -147,7 +167,7 @@ export default function HomePage() {
       {/* Games Grid */}
       <section id="games" className="max-w-6xl mx-auto px-4 pb-16">
         {loading ? (
-          <div className="text-center py-20 text-gray-400">Loading games...</div>
+          <div className="text-center py-20 text-gray-400">Se încarcă meciurile...</div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
