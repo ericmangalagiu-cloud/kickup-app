@@ -89,11 +89,25 @@ export async function isLegacyAccount(sessionId: string): Promise<boolean> {
   }
 }
 
-// Names that have admin privileges (can delete any game/player)
-const ADMIN_NAMES = ['ericmangalagiu', 'eric mangalagiu', 'eric', 'admin']
+export async function changePassword(sessionId: string, oldPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+  const { data: user, error } = await supabase
+    .from('users')
+    .select('id, password')
+    .eq('session_id', sessionId)
+    .maybeSingle()
+  if (error) return { success: false, error: 'Eroare de conexiune.' }
+  if (!user) return { success: false, error: 'Contul nu a fost găsit.' }
+  if (user.password !== oldPassword) return { success: false, error: 'Parola veche este greșită.' }
+  const { error: updateError } = await supabase
+    .from('users')
+    .update({ password: newPassword })
+    .eq('id', user.id)
+  if (updateError) return { success: false, error: 'Eroare la actualizare.' }
+  return { success: true }
+}
 
 export function isAdmin(name: string): boolean {
-  return ADMIN_NAMES.includes(name.trim().toLowerCase())
+  return name.trim().toLowerCase() === 'admin'
 }
 
 export function getSession(): { name: string; sessionId: string } | null {
