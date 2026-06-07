@@ -159,8 +159,8 @@ export default function GamePage() {
 
   if (!game) return null
 
-  // Private gate
-  if (game.is_private && !isOrganizer && !hasJoined && !unlocked) {
+  // Private gate — admin and organizer bypass, everyone else needs password
+  if (game.is_private && !isOrganizer && !isAdminUser && !hasJoined && !unlocked) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4 animate-fade-in">
         <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-sm border border-black/[0.07]">

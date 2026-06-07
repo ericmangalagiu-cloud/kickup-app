@@ -89,6 +89,20 @@ export async function isLegacyAccount(sessionId: string): Promise<boolean> {
   }
 }
 
+export async function getProfile(sessionId: string) {
+  const { data } = await supabase
+    .from('users')
+    .select('name, avatar, bio, age, favourite_team')
+    .eq('session_id', sessionId)
+    .maybeSingle()
+  return data
+}
+
+export async function updateProfile(sessionId: string, fields: { avatar?: string; bio?: string; age?: number | null; favourite_team?: string }) {
+  const { error } = await supabase.from('users').update(fields).eq('session_id', sessionId)
+  return !error
+}
+
 export async function changePassword(sessionId: string, oldPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
   const { data: user, error } = await supabase
     .from('users')

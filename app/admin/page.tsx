@@ -4,7 +4,8 @@ export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, Trash2, Users, Shield } from 'lucide-react'
+import Link from 'next/link'
+import { Search, Trash2, Users, Shield, Home } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { getSession, isAdmin } from '@/lib/session'
 
@@ -12,6 +13,7 @@ type UserRow = {
   id: string
   name: string
   name_lower: string
+  session_id: string
   created_at: string
 }
 
@@ -35,7 +37,7 @@ export default function AdminPage() {
     setLoading(true)
     const { data } = await supabase
       .from('users')
-      .select('id, name, name_lower, created_at')
+      .select('id, name, name_lower, session_id, created_at')
       .order('created_at', { ascending: false })
     setUsers(data || [])
     setLoading(false)
@@ -44,6 +46,9 @@ export default function AdminPage() {
   async function deleteUser(user: UserRow) {
     if (!confirm(`Ștergi contul "${user.name}"? Această acțiune nu poate fi anulată.`)) return
     setDeleting(user.id)
+    // Remove from all games they joined
+    await supabase.from('players').delete().eq('session_id', user.session_id)
+    // Delete the account
     await supabase.from('users').delete().eq('id', user.id)
     setUsers(prev => prev.filter(u => u.id !== user.id))
     setDeleting(null)
@@ -59,6 +64,11 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 animate-fade-in">
+      <div className="flex items-center justify-between mb-8">
+        <Link href="/" className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors">
+          <Home size={15} /> Acasă
+        </Link>
+      </div>
       <div className="flex items-center gap-3 mb-8">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)' }}>
           <Shield size={18} className="text-white" />

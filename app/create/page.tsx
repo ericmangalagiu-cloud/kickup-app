@@ -47,7 +47,7 @@ export default function CreatePage() {
       level: form.level || null,
       num_teams: parseInt(form.num_teams),
       players_per_team: parseInt(form.players_per_team),
-      price: form.price,
+      price: form.price || 'Gratuit',
       is_private: form.is_private,
       password_plain: form.is_private ? form.password : null,
       organizer_name: session.name,
@@ -138,8 +138,8 @@ export default function CreatePage() {
           </div>
         </div>
         <div>
-          <label className={labelClass}>Contribuție *</label>
-          <input required className={inputClass} placeholder="ex: 20 RON sau Gratuit" value={form.price} onChange={e => set('price', e.target.value)} />
+          <label className={labelClass}>Contribuție <span className="text-gray-400 font-normal">(opțional)</span></label>
+          <input className={inputClass} placeholder="ex: 20 RON sau Gratuit" value={form.price} onChange={e => set('price', e.target.value)} />
         </div>
         <div>
           <label className="flex items-center gap-3 cursor-pointer">
