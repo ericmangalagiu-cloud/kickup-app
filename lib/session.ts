@@ -92,13 +92,13 @@ export async function isLegacyAccount(sessionId: string): Promise<boolean> {
 export async function getProfile(sessionId: string) {
   const { data } = await supabase
     .from('users')
-    .select('name, avatar, bio, age, favourite_team')
+    .select('name, avatar, bio, age, favourite_team, nationality, best_foot, preferred_position')
     .eq('session_id', sessionId)
     .maybeSingle()
   return data
 }
 
-export async function updateProfile(sessionId: string, fields: { avatar?: string; bio?: string; age?: number | null; favourite_team?: string }) {
+export async function updateProfile(sessionId: string, fields: { avatar?: string; bio?: string; age?: number | null; favourite_team?: string; nationality?: string; best_foot?: string; preferred_position?: string }) {
   const { error } = await supabase.from('users').update(fields).eq('session_id', sessionId)
   return !error
 }

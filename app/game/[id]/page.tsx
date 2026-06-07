@@ -5,17 +5,11 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Pencil, Crown, Share2, MapPin, Calendar, Clock, Users, Banknote, Target, Lock, Trash2, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Pencil, Crown, Share2, MapPin, Calendar, Clock, Users, Banknote, Target, Lock, Trash2 } from 'lucide-react'
 import { supabase, Game, Player } from '@/lib/supabase'
 import { getSession, getInitials, hashColor, isAdmin } from '@/lib/session'
 import { formatDate, formatTime, timeAgo } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
-
-const levelColors: Record<string, string> = {
-  beginner: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  intermediate: 'bg-amber-50 text-amber-700 border-amber-200',
-  advanced: 'bg-red-50 text-red-700 border-red-200',
-}
 
 export default function GamePage() {
   const params = useParams()
@@ -25,6 +19,7 @@ export default function GamePage() {
 
   const [game, setGame] = useState<Game | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
+  const [playerAvatars, setPlayerAvatars] = useState<Record<string, string | null>>({})
   const [loading, setLoading] = useState(true)
   const [session, setSession] = useState<{ name: string; sessionId: string } | null>(null)
   const [optOutModal, setOptOutModal] = useState(false)
@@ -37,18 +32,14 @@ export default function GamePage() {
   useEffect(() => {
     const s = getSession()
     setSession(s)
-    // Read unlocked state regardless of session (so password gate works without login)
     const key = `kickup_unlocked_${id}`
     setUnlocked(localStorage.getItem(key) === 'true')
     fetchGame()
 
-    // Re-read session when name is set via the modal
     function onSessionUpdated() {
       const updated = getSession()
       setSession(updated)
-      if (updated) {
-        setUnlocked(localStorage.getItem(`kickup_unlocked_${id}`) === 'true')
-      }
+      if (updated) setUnlocked(localStorage.getItem(`kickup_unlocked_${id}`) === 'true')
     }
     window.addEventListener('session-updated', onSessionUpdated)
     return () => window.removeEventListener('session-updated', onSessionUpdated)
@@ -67,13 +58,8 @@ export default function GamePage() {
   async function fetchGame() {
     const { data, error } = await supabase.from('games').select('*').eq('id', id).single()
     if (!data) {
-      // Only redirect if it's a "not found" error, not a network/connection error
-      if (!error || error.code === 'PGRST116') {
-        router.push('/')
-      } else {
-        // Network error — show loading state briefly then retry
-        setTimeout(() => fetchGame(), 2000)
-      }
+      if (!error || error.code === 'PGRST116') router.push('/')
+      else setTimeout(() => fetchGame(), 2000)
       return
     }
     setGame(data)
@@ -83,7 +69,18 @@ export default function GamePage() {
 
   async function fetchPlayers() {
     const { data } = await supabase.from('players').select('*').eq('game_id', id).order('joined_at', { ascending: true })
-    setPlayers(data || [])
+    const ps = data || []
+    setPlayers(ps)
+    // Batch fetch avatars
+    if (ps.length > 0) {
+      const sessionIds = [...new Set(ps.map(p => p.session_id))]
+      const { data: users } = await supabase.from('users').select('session_id, avatar').in('session_id', sessionIds)
+      if (users) {
+        const map: Record<string, string | null> = {}
+        users.forEach(u => { map[u.session_id] = u.avatar })
+        setPlayerAvatars(map)
+      }
+    }
   }
 
   const activePlayers = players.filter(p => p.status === 'active')
@@ -102,7 +99,18 @@ export default function GamePage() {
   async function joinGame() {
     if (!session) return
     setJoining(true)
-    // Check if this name is already active in the game (prevents duplicates from same-name accounts)
+    // Check ban
+    if (game) {
+      const { data: ban } = await supabase.from('bans').select('id')
+        .eq('organizer_session_id', game.organizer_session_id)
+        .eq('banned_session_id', session.sessionId)
+        .maybeSingle()
+      if (ban) {
+        toast({ title: 'Nu te poți înscrie', description: 'Organizatorul te-a blocat din meciurile sale.' })
+        setJoining(false)
+        return
+      }
+    }
     const nameTaken = activePlayers.some(
       p => p.name.toLowerCase() === session.name.toLowerCase() && p.session_id !== session.sessionId
     )
@@ -111,11 +119,7 @@ export default function GamePage() {
       setJoining(false)
       return
     }
-    await supabase.from('players').insert({
-      game_id: id,
-      name: session.name,
-      session_id: session.sessionId,
-    })
+    await supabase.from('players').insert({ game_id: id, name: session.name, session_id: session.sessionId })
     await fetchPlayers()
     setJoining(false)
     toast({ title: 'Te-ai înscris!', description: 'Ești în meci.' })
@@ -130,8 +134,7 @@ export default function GamePage() {
   async function confirmOptOut() {
     if (!myPlayer) return
     await supabase.from('players').update({ status: 'opted_out', opt_out_reason: optOutReason || null }).eq('id', myPlayer.id)
-    setOptOutModal(false)
-    setOptOutReason('')
+    setOptOutModal(false); setOptOutReason('')
     await fetchPlayers()
     toast({ title: 'Ai renunțat', description: 'Sperăm să te vedem data viitoare!' })
   }
@@ -141,11 +144,8 @@ export default function GamePage() {
     if (!game) return
     if (passwordInput === game.password_plain) {
       localStorage.setItem(`kickup_unlocked_${id}`, 'true')
-      setUnlocked(true)
-      setPasswordError(false)
-    } else {
-      setPasswordError(true)
-    }
+      setUnlocked(true); setPasswordError(false)
+    } else { setPasswordError(true) }
   }
 
   async function shareGame() {
@@ -153,13 +153,9 @@ export default function GamePage() {
     toast({ title: 'Copiat', description: 'Trimite prietenilor tăi!' })
   }
 
-  if (loading) {
-    return <div className="text-center py-40 text-gray-400">Loading game...</div>
-  }
-
+  if (loading) return <div className="text-center py-40 text-gray-400">Loading game...</div>
   if (!game) return null
 
-  // Private gate — admin and organizer bypass, everyone else needs password
   if (game.is_private && !isOrganizer && !isAdminUser && !hasJoined && !unlocked) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4 animate-fade-in">
@@ -170,9 +166,7 @@ export default function GamePage() {
           <h2 className="text-xl font-bold text-gray-900 mb-2">Meci privat</h2>
           <p className="text-gray-400 text-sm mb-6">Introduceți parola pentru a vedea detaliile</p>
           <form onSubmit={checkPassword} className="space-y-4">
-            <input
-              type="password"
-              value={passwordInput}
+            <input type="password" value={passwordInput}
               onChange={e => { setPasswordInput(e.target.value); setPasswordError(false) }}
               placeholder="Password"
               className={`w-full px-4 py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all ${passwordError ? 'border-red-400 animate-shake' : 'border-black/[0.08]'}`}
@@ -186,11 +180,7 @@ export default function GamePage() {
   }
 
   const status = isPast ? 'Past' : activePlayers.length >= totalSpots ? 'Full' : 'Open'
-  const statusColor = {
-    Open: 'text-green-700 bg-green-50 border-green-200',
-    Full: 'text-red-600 bg-red-50 border-red-200',
-    Past: 'text-gray-500 bg-gray-100 border-gray-200'
-  }[status]
+  const statusColor = { Open: 'text-green-700 bg-green-50 border-green-200', Full: 'text-red-600 bg-red-50 border-red-200', Past: 'text-gray-500 bg-gray-100 border-gray-200' }[status]
   const progressPct = Math.min(100, (activePlayers.length / totalSpots) * 100)
 
   return (
@@ -220,9 +210,18 @@ export default function GamePage() {
         <p className="flex items-center gap-2 text-gray-700"><Users size={14} className="text-green-600 flex-shrink-0" />{game.num_teams} teams · {game.players_per_team} players each · {totalSpots} total</p>
         <p className="flex items-center gap-2 text-gray-700"><Banknote size={14} className="text-green-600 flex-shrink-0" />{game.price}</p>
         <p className="flex items-center gap-2 text-gray-700"><Target size={14} className="text-green-600 flex-shrink-0" />{game.level ? game.level.charAt(0).toUpperCase() + game.level.slice(1) : 'Open to all'}</p>
+        {/* Organizer row with clickable link */}
         <div className="flex items-center gap-2 pt-1 border-t border-black/[0.05]">
           <Crown size={14} className="text-amber-500" />
-          <span className="text-gray-600">Organizator: <span className="text-gray-900 font-medium">{game.organizer_name}</span></span>
+          <span className="text-gray-600">
+            Organizator: <span className="text-gray-900 font-medium">{game.organizer_name}</span>
+          </span>
+          {game.organizer_session_id && (
+            <Link href={`/player/${game.organizer_session_id}`}
+              className="ml-1 text-xs text-green-600 hover:underline hover:text-green-700 transition-colors">
+              · click pentru mai multe info
+            </Link>
+          )}
         </div>
       </div>
 
@@ -231,32 +230,20 @@ export default function GamePage() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-gray-900 font-bold text-lg">Jucători ({activePlayers.length} / {totalSpots})</h2>
         </div>
-        {/* Progress bar */}
         <div className="h-2 rounded-full mb-5 overflow-hidden bg-gray-100">
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{
-              width: `${progressPct}%`,
-              background: 'linear-gradient(90deg, #16a34a, #0d9488)'
-            }}
-          />
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progressPct}%`, background: 'linear-gradient(90deg, #16a34a, #0d9488)' }} />
         </div>
-        {/* Active players */}
         <div className="space-y-2">
           {activePlayers.map(p => {
             const isMe = p.session_id === session?.sessionId
+            const av = playerAvatars[p.session_id]
             return (
-              <Link
-                key={p.id}
-                href={`/player/${p.session_id}`}
+              <Link key={p.id} href={`/player/${p.session_id}`}
                 className="flex items-center gap-3 p-2 rounded-xl transition-all hover:bg-gray-50 group"
-                style={isMe ? { background: 'rgba(22,163,74,0.07)', border: '1px solid rgba(22,163,74,0.2)' } : {}}
-              >
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                  style={{ backgroundColor: hashColor(p.name) }}
-                >
-                  {getInitials(p.name)}
+                style={isMe ? { background: 'rgba(22,163,74,0.07)', border: '1px solid rgba(22,163,74,0.2)' } : {}}>
+                <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                  style={{ background: av ? undefined : `linear-gradient(135deg, ${hashColor(p.name)}, #0d9488)` }}>
+                  {av ? <img src={av} alt={p.name} className="w-full h-full object-cover" /> : getInitials(p.name)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-gray-900 text-sm font-medium group-hover:text-green-700 transition-colors">{p.name}</span>
@@ -270,64 +257,55 @@ export default function GamePage() {
             <p className="text-gray-400 text-sm text-center py-4">Niciun jucător încă — fii primul!</p>
           )}
         </div>
-        {/* Opted out */}
         {optedOut.length > 0 && (
           <details className="mt-4">
-            <summary className="text-sm text-gray-400 cursor-pointer hover:text-gray-600 transition-colors">
-              Au renunțat ({optedOut.length})
-            </summary>
+            <summary className="text-sm text-gray-400 cursor-pointer hover:text-gray-600 transition-colors">Au renunțat ({optedOut.length})</summary>
             <div className="mt-2 space-y-2">
-              {optedOut.map(p => (
-                <div key={p.id} className="flex items-center gap-3 p-2 opacity-50">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: hashColor(p.name) }}>
-                    {getInitials(p.name)}
+              {optedOut.map(p => {
+                const av = playerAvatars[p.session_id]
+                return (
+                  <div key={p.id} className="flex items-center gap-3 p-2 opacity-50">
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold"
+                      style={{ background: av ? undefined : `linear-gradient(135deg, ${hashColor(p.name)}, #0d9488)` }}>
+                      {av ? <img src={av} alt={p.name} className="w-full h-full object-cover" /> : getInitials(p.name)}
+                    </div>
+                    <div>
+                      <span className="text-gray-500 text-sm line-through">{p.name}</span>
+                      {p.opt_out_reason && <p className="text-xs text-gray-400 mt-0.5">&quot;{p.opt_out_reason}&quot;</p>}
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-gray-500 text-sm line-through">{p.name}</span>
-                    {p.opt_out_reason && <p className="text-xs text-gray-400 mt-0.5">&quot;{p.opt_out_reason}&quot;</p>}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </details>
         )}
       </div>
 
-      {/* Action Button */}
+      {/* Action Buttons */}
       {!isPast && (
         <>
           {!hasJoined && !hasOptedOut && (
-            <button
-              onClick={joinGame}
-              disabled={isFull || joining || !session}
-              className="btn-gradient w-full py-4 font-bold text-base mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <button onClick={joinGame} disabled={isFull || joining || !session}
+              className="btn-gradient w-full py-4 font-bold text-base mb-4 disabled:opacity-50 disabled:cursor-not-allowed">
               {joining ? 'Se înscrie...' : isFull ? 'Meci complet' : 'Înscrie-te'}
             </button>
           )}
           {hasJoined && (
-            <button
-              onClick={() => setOptOutModal(true)}
-              className="w-full py-4 font-bold text-base mb-4 rounded-full border border-red-300 text-red-500 hover:bg-red-50 transition-all"
-            >
+            <button onClick={() => setOptOutModal(true)}
+              className="w-full py-4 font-bold text-base mb-4 rounded-full border border-red-300 text-red-500 hover:bg-red-50 transition-all">
               Nu pot veni
             </button>
           )}
           {hasOptedOut && (
             <div className="flex gap-3 mb-4">
-              <button disabled className="flex-1 py-4 font-bold text-base rounded-full border border-gray-200 text-gray-400 cursor-not-allowed">
-                Ai renunțat
-              </button>
-              <button
-                onClick={async () => {
-                  if (!myPlayer) return
-                  await supabase.from('players').update({ status: 'active', opt_out_reason: null }).eq('id', myPlayer.id)
-                  await fetchPlayers()
-                  toast({ title: 'Bine ai revenit!', description: 'Ești din nou în meci.' })
-                }}
-                disabled={isFull}
-                className="flex-1 py-4 font-bold text-base rounded-full btn-gradient disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              <button disabled className="flex-1 py-4 font-bold text-base rounded-full border border-gray-200 text-gray-400 cursor-not-allowed">Ai renunțat</button>
+              <button onClick={async () => {
+                if (!myPlayer) return
+                await supabase.from('players').update({ status: 'active', opt_out_reason: null }).eq('id', myPlayer.id)
+                await fetchPlayers()
+                toast({ title: 'Bine ai revenit!', description: 'Ești din nou în meci.' })
+              }} disabled={isFull}
+                className="flex-1 py-4 font-bold text-base rounded-full btn-gradient disabled:opacity-50 disabled:cursor-not-allowed">
                 {isFull ? 'Meci complet' : 'Înscrie-te din nou'}
               </button>
             </div>
@@ -335,20 +313,14 @@ export default function GamePage() {
         </>
       )}
 
-      {/* Share Button */}
-      <button
-        onClick={shareGame}
-        className="w-full flex items-center justify-center gap-2 py-3 bg-white rounded-full text-gray-500 hover:text-gray-800 transition-colors text-sm font-medium border border-black/[0.08] hover:border-black/[0.15] shadow-sm mb-3"
-      >
+      <button onClick={shareGame}
+        className="w-full flex items-center justify-center gap-2 py-3 bg-white rounded-full text-gray-500 hover:text-gray-800 transition-colors text-sm font-medium border border-black/[0.08] hover:border-black/[0.15] shadow-sm mb-3">
         <Share2 size={16} /> Distribuie meciul
       </button>
 
-      {/* Delete button — organizer or admin */}
       {(isOrganizer || isAdminUser) && (
-        <button
-          onClick={deleteGame}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-full border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 transition-all text-sm font-medium"
-        >
+        <button onClick={deleteGame}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-full border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 transition-all text-sm font-medium">
           <Trash2 size={15} /> Șterge meciul
         </button>
       )}
@@ -359,27 +331,13 @@ export default function GamePage() {
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full animate-slide-up shadow-xl border border-black/[0.07]">
             <h3 className="text-xl font-bold text-gray-900 mb-1">Ne pare rău să auzim asta!</h3>
             <p className="text-gray-500 text-sm mb-4">Spune-i organizatorului de ce (opțional)</p>
-            <textarea
-              value={optOutReason}
-              onChange={e => setOptOutReason(e.target.value)}
-              placeholder="ex: Am treabă, sunt accidentat..."
-              rows={3}
+            <textarea value={optOutReason} onChange={e => setOptOutReason(e.target.value)}
+              placeholder="ex: Am treabă, sunt accidentat..." rows={3}
               className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-black/[0.08] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none mb-4"
             />
             <div className="flex gap-3">
-              <button
-                onClick={() => setOptOutModal(false)}
-                className="flex-1 py-3 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors font-medium"
-              >
-                Înapoi
-              </button>
-              <button
-                onClick={confirmOptOut}
-                className="flex-1 py-3 rounded-full text-white font-bold transition-all"
-                style={{ background: 'linear-gradient(135deg, #dc2626, #ef4444)' }}
-              >
-                Confirm
-              </button>
+              <button onClick={() => setOptOutModal(false)} className="flex-1 py-3 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors font-medium">Înapoi</button>
+              <button onClick={confirmOptOut} className="flex-1 py-3 rounded-full text-white font-bold transition-all" style={{ background: 'linear-gradient(135deg, #dc2626, #ef4444)' }}>Confirm</button>
             </div>
           </div>
         </div>

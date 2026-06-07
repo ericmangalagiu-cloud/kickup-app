@@ -136,6 +136,14 @@ export function Navbar() {
                 )}
 
                 <Link
+                  href="/my-matches"
+                  onClick={() => setAccountOpen(false)}
+                  className="block text-sm text-gray-500 hover:text-gray-700 transition-colors mb-1"
+                >
+                  Meciurile mele
+                </Link>
+
+                <Link
                   href="/account"
                   onClick={() => setAccountOpen(false)}
                   className="block text-sm text-gray-500 hover:text-gray-700 transition-colors mb-1"
