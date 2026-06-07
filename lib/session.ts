@@ -38,6 +38,10 @@ export async function signUp(name: string, password: string): Promise<{ success:
 
   localStorage.setItem('kickup_name', name.trim())
   localStorage.setItem('kickup_session_id', sessionId)
+  // Signal that a brand-new account was just created (shows instructions modal)
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('signup-complete'))
+  }
   return { success: true }
 }
 
@@ -83,6 +87,13 @@ export async function isLegacyAccount(sessionId: string): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+// Names that have admin privileges (can delete any game/player)
+const ADMIN_NAMES = ['ericmangalagiu', 'eric mangalagiu', 'eric', 'admin']
+
+export function isAdmin(name: string): boolean {
+  return ADMIN_NAMES.includes(name.trim().toLowerCase())
 }
 
 export function getSession(): { name: string; sessionId: string } | null {

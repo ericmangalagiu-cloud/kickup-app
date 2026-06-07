@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Pencil, Crown, Share2, MapPin, Calendar, Clock, Users, Banknote, Target, Lock, Trash2 } from 'lucide-react'
 import { supabase, Game, Player } from '@/lib/supabase'
-import { getSession, getInitials, hashColor } from '@/lib/session'
+import { getSession, getInitials, hashColor, isAdmin } from '@/lib/session'
 import { formatDate, formatTime, timeAgo } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 
@@ -91,6 +91,7 @@ export default function GamePage() {
   const totalSpots = game ? game.num_teams * game.players_per_team : 0
   const spotsLeft = Math.max(0, totalSpots - activePlayers.length)
   const isOrganizer = session && game && session.sessionId === game.organizer_session_id
+  const isAdminUser = session && isAdmin(session.name)
   const myPlayer = players.find(p => p.session_id === session?.sessionId)
   const hasJoined = myPlayer?.status === 'active'
   const hasOptedOut = myPlayer?.status === 'opted_out'
@@ -341,8 +342,8 @@ export default function GamePage() {
         <Share2 size={16} /> Distribuie meciul
       </button>
 
-      {/* Delete button — organizer only */}
-      {isOrganizer && (
+      {/* Delete button — organizer or admin */}
+      {(isOrganizer || isAdminUser) && (
         <button
           onClick={deleteGame}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-full border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 transition-all text-sm font-medium"

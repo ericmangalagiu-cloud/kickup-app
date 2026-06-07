@@ -3,37 +3,19 @@
 import { useState, useEffect } from 'react'
 import { MapPin, PlusCircle, Users, Share2 } from 'lucide-react'
 
-const ONBOARDED_KEY = 'kickup_onboarded'
-
 export function InstructionsModal() {
   const [show, setShow] = useState(false)
 
   useEffect(() => {
-    // Small delay so it doesn't flash on hydration
-    const timer = setTimeout(() => {
-      const name = localStorage.getItem('kickup_name')
-      const onboarded = localStorage.getItem(ONBOARDED_KEY)
-      if (name && !onboarded) {
-        setShow(true)
-      }
-    }, 400)
-    return () => clearTimeout(timer)
-  }, [])
-
-  // Also listen for when name is set for the first time
-  useEffect(() => {
+    // Only show when a new account is created (signup-complete event)
     function handler() {
-      const onboarded = localStorage.getItem(ONBOARDED_KEY)
-      if (!onboarded) {
-        setTimeout(() => setShow(true), 300)
-      }
+      setShow(true)
     }
-    window.addEventListener('session-updated', handler)
-    return () => window.removeEventListener('session-updated', handler)
+    window.addEventListener('signup-complete', handler)
+    return () => window.removeEventListener('signup-complete', handler)
   }, [])
 
   function dismiss() {
-    localStorage.setItem(ONBOARDED_KEY, 'true')
     setShow(false)
   }
 

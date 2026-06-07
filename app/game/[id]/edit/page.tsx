@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { TimePicker } from '@/components/TimePicker'
 import { supabase } from '@/lib/supabase'
 import { getSession } from '@/lib/session'
 import { ROMANIAN_CITIES } from '@/hooks/useCityStore'
@@ -133,14 +134,14 @@ export default function EditGamePage() {
             </select>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <div>
             <label className={labelClass}>Ora de start *</label>
-            <input required type="time" className={inputClass} value={form.start_time} onChange={e => set('start_time', e.target.value)} />
+            <TimePicker value={form.start_time} onChange={v => set('start_time', v)} required />
           </div>
           <div>
             <label className={labelClass}>Ora de final *</label>
-            <input required type="time" className={inputClass} value={form.end_time} onChange={e => set('end_time', e.target.value)} />
+            <TimePicker value={form.end_time} onChange={v => set('end_time', v)} required />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
