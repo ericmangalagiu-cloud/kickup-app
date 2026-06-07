@@ -9,7 +9,7 @@ type Mode = 'signup' | 'login'
 
 export function NameModal() {
   const { isOpen, open, close } = useNameModal()
-  const [mode, setMode] = useState<Mode>('signup')
+  const [mode, setMode] = useState<Mode>('login')
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -99,17 +99,17 @@ export function NameModal() {
         <div className="flex rounded-xl bg-gray-100 p-1 mb-6">
           <button
             type="button"
-            onClick={() => switchMode('signup')}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === 'signup' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-          >
-            Înregistrare
-          </button>
-          <button
-            type="button"
             onClick={() => switchMode('login')}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === 'login' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Autentificare
+          </button>
+          <button
+            type="button"
+            onClick={() => switchMode('signup')}
+            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${mode === 'signup' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Înregistrare
           </button>
         </div>
 

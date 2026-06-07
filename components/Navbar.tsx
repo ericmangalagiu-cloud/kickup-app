@@ -3,12 +3,13 @@
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { ChevronDown, MapPin, Shield, Home } from 'lucide-react'
-import { getSession, getInitials, isAdmin } from '@/lib/session'
+import { getSession, getInitials, isAdmin, hashColor } from '@/lib/session'
 import { useNameModal } from '@/hooks/useNameModal'
 import { useCityStore, ROMANIAN_CITIES } from '@/hooks/useCityStore'
 
 export function Navbar() {
   const [session, setSession] = useState<{ name: string; sessionId: string } | null>(null)
+  const [avatar, setAvatar] = useState('')
   const [accountOpen, setAccountOpen] = useState(false)
   const [cityOpen, setCityOpen] = useState(false)
   const accountRef = useRef<HTMLDivElement>(null)
@@ -19,9 +20,15 @@ export function Navbar() {
   useEffect(() => {
     const s = getSession()
     setSession(s)
-    const handler = () => setSession(getSession())
+    setAvatar(localStorage.getItem('kickup_avatar') || '')
+    const handler = () => { setSession(getSession()); setAvatar(localStorage.getItem('kickup_avatar') || '') }
+    const avatarHandler = () => setAvatar(localStorage.getItem('kickup_avatar') || '')
     window.addEventListener('session-updated', handler)
-    return () => window.removeEventListener('session-updated', handler)
+    window.addEventListener('avatar-updated', avatarHandler)
+    return () => {
+      window.removeEventListener('session-updated', handler)
+      window.removeEventListener('avatar-updated', avatarHandler)
+    }
   }, [])
 
   useEffect(() => {
@@ -97,10 +104,13 @@ export function Navbar() {
           <div className="relative" ref={accountRef}>
             <button
               onClick={() => setAccountOpen(!accountOpen)}
-              className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold hover:opacity-90 transition-opacity"
-              style={{ background: 'linear-gradient(135deg, #16a34a, #0d9488)' }}
+              className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center text-white text-sm font-bold hover:opacity-90 transition-opacity flex-shrink-0"
+              style={{ background: avatar ? undefined : `linear-gradient(135deg, ${hashColor(session.name)}, #0d9488)` }}
             >
-              {getInitials(session.name)}
+              {avatar
+                ? <img src={avatar} alt="" className="w-full h-full object-cover" />
+                : getInitials(session.name)
+              }
             </button>
             {accountOpen && (
               <div className="absolute right-0 top-11 bg-white rounded-xl p-3 w-52 shadow-xl border border-black/[0.07] animate-fade-in">
@@ -132,13 +142,6 @@ export function Navbar() {
                 >
                   Editează contul
                 </Link>
-
-                <button
-                  onClick={() => { setAccountOpen(false); open() }}
-                  className="text-sm text-gray-400 hover:text-gray-600 transition-colors w-full text-left mb-2"
-                >
-                  Schimbă contul
-                </button>
 
                 <div className="border-t border-black/[0.05] pt-2">
                   <button

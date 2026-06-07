@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Pencil, Crown, Share2, MapPin, Calendar, Clock, Users, Banknote, Target, Lock, Trash2 } from 'lucide-react'
+import { ArrowLeft, Pencil, Crown, Share2, MapPin, Calendar, Clock, Users, Banknote, Target, Lock, Trash2, ExternalLink } from 'lucide-react'
 import { supabase, Game, Player } from '@/lib/supabase'
 import { getSession, getInitials, hashColor, isAdmin } from '@/lib/session'
 import { formatDate, formatTime, timeAgo } from '@/lib/utils'
@@ -246,9 +246,10 @@ export default function GamePage() {
           {activePlayers.map(p => {
             const isMe = p.session_id === session?.sessionId
             return (
-              <div
+              <Link
                 key={p.id}
-                className="flex items-center gap-3 p-2 rounded-xl transition-all"
+                href={`/player/${p.session_id}`}
+                className="flex items-center gap-3 p-2 rounded-xl transition-all hover:bg-gray-50 group"
                 style={isMe ? { background: 'rgba(22,163,74,0.07)', border: '1px solid rgba(22,163,74,0.2)' } : {}}
               >
                 <div
@@ -258,11 +259,11 @@ export default function GamePage() {
                   {getInitials(p.name)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-gray-900 text-sm font-medium">{p.name}</span>
+                  <span className="text-gray-900 text-sm font-medium group-hover:text-green-700 transition-colors">{p.name}</span>
                   {isMe && <span className="ml-2 text-xs text-green-600">tu</span>}
                 </div>
                 <span className="text-xs text-gray-400">{timeAgo(p.joined_at)}</span>
-              </div>
+              </Link>
             )
           })}
           {activePlayers.length === 0 && (
