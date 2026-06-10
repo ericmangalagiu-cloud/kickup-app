@@ -3,10 +3,9 @@
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
-import { ChevronDown, MapPin, Shield, Home } from 'lucide-react'
+import { Shield } from 'lucide-react'
 import { getSession, getInitials, isAdmin, hashColor } from '@/lib/session'
 import { useNameModal } from '@/hooks/useNameModal'
-import { useCityStore, ROMANIAN_CITIES } from '@/hooks/useCityStore'
 
 const NAV_LINKS = [
   { href: '/',        label: 'Acasă' },
@@ -18,12 +17,9 @@ export function Navbar() {
   const [session, setSession] = useState<{ name: string; sessionId: string } | null>(null)
   const [avatar, setAvatar] = useState('')
   const [accountOpen, setAccountOpen] = useState(false)
-  const [cityOpen, setCityOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const accountRef = useRef<HTMLDivElement>(null)
-  const cityRef = useRef<HTMLDivElement>(null)
   const { open } = useNameModal()
-  const { selectedCity, setCity } = useCityStore()
 
   const isHome = pathname === '/'
 
@@ -51,7 +47,6 @@ export function Navbar() {
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (accountRef.current && !accountRef.current.contains(e.target as Node)) setAccountOpen(false)
-      if (cityRef.current && !cityRef.current.contains(e.target as Node)) setCityOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
@@ -97,42 +92,14 @@ export function Navbar() {
         {/* Create game (desktop) */}
         {session && (
           <Link href="/create"
-            className={`hidden md:flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold mr-2 transition-all ${
+            className={`hidden md:flex items-center px-4 py-2 rounded-full text-sm font-bold mr-2 transition-all ${
               transparent
                 ? 'border border-white/25 text-white hover:bg-white/10'
                 : 'btn-gradient'
             }`}>
-            + Creează meci
+            Creează meci
           </Link>
         )}
-
-        {/* City selector */}
-        <div className="relative" ref={cityRef}>
-          <button onClick={() => setCityOpen(!cityOpen)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all ${
-              transparent
-                ? 'border border-white/20 text-white/80 hover:bg-white/10'
-                : 'glass border border-black/[0.08] text-gray-700 hover:border-green-400 hover:text-green-700'
-            }`}>
-            <MapPin size={14} className={transparent ? 'text-white/70' : 'text-green-600'} />
-            <span className="hidden sm:inline">{selectedCity || 'Oraș'}</span>
-            <ChevronDown size={14} className={`transition-transform ${cityOpen ? 'rotate-180' : ''}`} />
-          </button>
-          {cityOpen && (
-            <div className="absolute right-0 top-11 bg-white rounded-2xl shadow-xl border border-black/[0.07] w-52 max-h-72 overflow-y-auto animate-fade-in z-50">
-              <button onClick={() => { setCity(''); setCityOpen(false) }}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-green-50 ${!selectedCity ? 'text-green-700 font-semibold bg-green-50' : 'text-gray-600'}`}>
-                Toate orașele
-              </button>
-              {ROMANIAN_CITIES.map(city => (
-                <button key={city} onClick={() => { setCity(city); setCityOpen(false) }}
-                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-green-50 ${selectedCity === city ? 'text-green-700 font-semibold bg-green-50' : 'text-gray-700'}`}>
-                  {city}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* Account */}
         {session ? (

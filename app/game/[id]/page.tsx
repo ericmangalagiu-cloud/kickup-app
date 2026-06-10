@@ -28,6 +28,8 @@ export default function GamePage() {
   const [passwordError, setPasswordError] = useState(false)
   const [unlocked, setUnlocked] = useState(false)
   const [joining, setJoining] = useState(false)
+  const [adminAddName, setAdminAddName] = useState('')
+  const [adminAdding, setAdminAdding] = useState(false)
 
   useEffect(() => {
     const s = getSession()
@@ -151,6 +153,24 @@ export default function GamePage() {
   async function shareGame() {
     await navigator.clipboard.writeText(window.location.href)
     toast({ title: 'Copiat', description: 'Trimite prietenilor tăi!' })
+  }
+
+  async function adminRemovePlayer(playerId: string, playerName: string) {
+    if (!confirm(`Elimini pe ${playerName} din meci?`)) return
+    await supabase.from('players').delete().eq('id', playerId)
+    await fetchPlayers()
+    toast({ title: 'Jucător eliminat', description: `${playerName} a fost scos din meci.` })
+  }
+
+  async function adminAddPlayer(e: React.FormEvent) {
+    e.preventDefault()
+    if (!adminAddName.trim()) return
+    setAdminAdding(true)
+    await supabase.from('players').insert({ game_id: id, name: adminAddName.trim(), session_id: `admin-added-${Date.now()}` })
+    setAdminAddName('')
+    await fetchPlayers()
+    setAdminAdding(false)
+    toast({ title: 'Jucător adăugat', description: `${adminAddName.trim()} a fost adăugat în meci.` })
   }
 
   if (loading) return <div className="text-center py-40 text-gray-400">Loading game...</div>
@@ -323,6 +343,52 @@ export default function GamePage() {
           className="w-full flex items-center justify-center gap-2 py-3 rounded-full border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 transition-all text-sm font-medium">
           <Trash2 size={15} /> Șterge meciul
         </button>
+      )}
+
+      {/* Admin player management panel */}
+      {isAdminUser && (
+        <div className="mt-8 bg-purple-50 border border-purple-200 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center">
+              <span className="text-white text-[10px] font-bold">A</span>
+            </div>
+            <h3 className="text-sm font-bold text-purple-900">Panou Admin — Editează lista</h3>
+          </div>
+
+          {/* Active players editable list */}
+          <div className="space-y-2 mb-5">
+            {activePlayers.length === 0 && (
+              <p className="text-purple-400 text-sm text-center py-2">Niciun jucător activ.</p>
+            )}
+            {activePlayers.map(p => {
+              const av = playerAvatars[p.session_id]
+              return (
+                <div key={p.id} className="flex items-center gap-3 bg-white rounded-xl px-3 py-2.5 border border-purple-100">
+                  <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                    style={{ background: av ? undefined : `linear-gradient(135deg, ${hashColor(p.name)}, #0d9488)` }}>
+                    {av ? <img src={av} alt={p.name} className="w-full h-full object-cover" /> : getInitials(p.name)}
+                  </div>
+                  <span className="flex-1 text-sm font-medium text-gray-800">{p.name}</span>
+                  <button onClick={() => adminRemovePlayer(p.id, p.name)}
+                    className="w-7 h-7 rounded-full bg-red-50 border border-red-200 text-red-500 hover:bg-red-100 transition-colors flex items-center justify-center text-lg leading-none font-bold flex-shrink-0">
+                    ×
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Add player manually */}
+          <form onSubmit={adminAddPlayer} className="flex gap-2">
+            <input type="text" value={adminAddName} onChange={e => setAdminAddName(e.target.value)}
+              placeholder="Adaugă un jucător manual..."
+              className="flex-1 px-3 py-2 rounded-xl bg-white border border-purple-200 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
+            <button type="submit" disabled={!adminAddName.trim() || adminAdding}
+              className="px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-bold hover:bg-purple-700 transition-colors disabled:opacity-50">
+              {adminAdding ? '...' : 'Adaugă'}
+            </button>
+          </form>
+        </div>
       )}
 
       {/* Opt-out Modal */}
