@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
+import { BottomNav } from "@/components/BottomNav";
 import { NameModal } from "@/components/NameModal";
 import { InstructionsModal } from "@/components/InstructionsModal";
 import { Toaster } from "@/components/ui/toaster";
@@ -21,16 +22,14 @@ export const metadata: Metadata = {
   description: "Organizează și alătură-te meciurilor de fotbal pickup din România.",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="ro" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="min-h-screen bg-background text-foreground">
         <Navbar />
-        <main className="pt-16">{children}</main>
+        {/* pt-16 = navbar height; pb-16 on mobile = bottom nav height */}
+        <main className="pt-16 pb-16 md:pb-0">{children}</main>
+        <BottomNav />
         <NameModal />
         <InstructionsModal />
         <Toaster />

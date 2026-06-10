@@ -66,6 +66,94 @@
   80% { transform: translateX(4px); }
 }
 
+/* ═══ FOOTBALL BALL ═══ */
+@keyframes ballFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-22px) rotate(6deg); }
+}
+@keyframes shadowPulse {
+  0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.55; }
+  50% { transform: translateX(-50%) scaleX(0.6); opacity: 0.2; }
+}
+@keyframes floatCard1 {
+  0%, 100% { transform: translateY(0px) rotate(-2deg); }
+  50% { transform: translateY(-12px) rotate(-0.5deg); }
+}
+@keyframes floatCard2 {
+  0%, 100% { transform: translateY(0px) rotate(2deg); }
+  50% { transform: translateY(-9px) rotate(3deg); }
+}
+
+.kickup-ball {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at 38% 32%,
+    #e8e8e8 0%,
+    #b8b8b8 22%,
+    #888 50%,
+    #3a3a3a 78%,
+    #1a1a1a 100%
+  );
+  box-shadow:
+    inset -16px -16px 32px rgba(0,0,0,0.65),
+    inset 8px 8px 20px rgba(255,255,255,0.45),
+    0 32px 64px rgba(0,0,0,0.9),
+    0 0 90px rgba(22,163,74,0.28);
+  animation: ballFloat 4s ease-in-out infinite;
+}
+.kickup-ball-patches {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  mix-blend-mode: multiply;
+  opacity: 0.88;
+}
+.kickup-ball-shine {
+  position: absolute;
+  top: 12%;
+  left: 16%;
+  width: 37%;
+  height: 26%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.78) 0%, transparent 72%);
+  transform: rotate(-25deg);
+  pointer-events: none;
+}
+.kickup-ball-shadow {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 145px;
+  height: 26px;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.7) 0%, transparent 70%);
+  animation: shadowPulse 4s ease-in-out infinite;
+}
+
+/* ═══ ENTRANCE ANIMATIONS ═══ */
+@keyframes heroSlideUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-anim-1 { animation: heroSlideUp 0.65s ease-out 0.05s both; }
+.hero-anim-2 { animation: heroSlideUp 0.65s ease-out 0.20s both; }
+.hero-anim-3 { animation: heroSlideUp 0.65s ease-out 0.38s both; }
+.hero-anim-4 { animation: heroSlideUp 0.65s ease-out 0.54s both; }
+.hero-anim-5 { animation: heroSlideUp 0.65s ease-out 0.70s both; }
+
+/* ═══ CARD TILT (set by JS) ═══ */
+.tilt-card {
+  transition: transform 0.12s ease-out, box-shadow 0.12s ease-out;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.tilt-card-reset {
+  transition: transform 0.35s ease-out, box-shadow 0.35s ease-out;
+}
+
 :root {
   --background: #f8fafb;
   --foreground: #111827;
