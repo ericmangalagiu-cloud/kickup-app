@@ -10,28 +10,34 @@ function FootballBall({ size = 240 }: { size?: number }) {
     <div className="relative select-none flex-shrink-0" style={{ width: size, height: size + 40 }}>
       <div className="kickup-ball" style={{ width: size, height: size }}>
         <svg viewBox="0 0 100 100" className="kickup-ball-patches">
-          {/* 6-pentagon ring — classic football look */}
-          {/* Top (fully visible) */}
-          <polygon points="50,17 63,26.5 59,42 41,42 37,26.5" fill="#111" />
-          {/* Top-right (angling away) */}
-          <polygon points="74,32 87,43 83,58.5 68,57 64.5,41.5" fill="#111" opacity="0.84" />
-          {/* Bottom-right (facing away) */}
-          <polygon points="71,72 83,57.5 96,63 93,79 79,84" fill="#111" opacity="0.65" />
-          {/* Bottom (partial) */}
-          <polygon points="50,83 63,73.5 59,58 41,58 37,73.5" fill="#111" opacity="0.72" />
-          {/* Bottom-left (facing away) */}
-          <polygon points="29,72 17,57.5 4,63 7,79 21,84" fill="#111" opacity="0.65" />
-          {/* Top-left (angling away) */}
-          <polygon points="26,32 35.5,41.5 31,57 16,58.5 13,43" fill="#111" opacity="0.84" />
-          {/* Seam lines connecting patches */}
-          <line x1="59" y1="42" x2="64.5" y2="41.5" stroke="#222" strokeWidth="1.2" opacity="0.6"/>
-          <line x1="41" y1="42" x2="35.5" y2="41.5" stroke="#222" strokeWidth="1.2" opacity="0.6"/>
-          <line x1="63" y1="26.5" x2="64.5" y2="41.5" stroke="#222" strokeWidth="1.2" opacity="0.5"/>
-          <line x1="37" y1="26.5" x2="35.5" y2="41.5" stroke="#222" strokeWidth="1.2" opacity="0.5"/>
-          <line x1="59" y1="58" x2="68" y2="57" stroke="#222" strokeWidth="1.2" opacity="0.5"/>
-          <line x1="41" y1="58" x2="31" y2="57" stroke="#222" strokeWidth="1.2" opacity="0.5"/>
-          <line x1="63" y1="73.5" x2="68" y2="57" stroke="#222" strokeWidth="1.2" opacity="0.45"/>
-          <line x1="37" y1="73.5" x2="31" y2="57" stroke="#222" strokeWidth="1.2" opacity="0.45"/>
+          {/*
+            Classic football pattern — 5 black pentagons arranged around
+            a white hexagonal center, exactly like the ⚽ emoji / Adidas Telstar.
+            Ball is WHITE so the black patches read immediately as football.
+          */}
+
+          {/* ── TOP pentagon (fully visible, pointing down into ball) ── */}
+          <polygon points="50,11 65,19 62,36 38,36 35,19" fill="#111"/>
+
+          {/* ── TOP-RIGHT pentagon (partially cut by sphere edge) ── */}
+          <polygon points="66,37 80,35 89,47 85,62 70,60" fill="#1a1a1a" opacity="0.92"/>
+
+          {/* ── BOTTOM-RIGHT pentagon (curving away, slightly faded) ── */}
+          <polygon points="58,62 73,62 80,75 69,86 54,82" fill="#1a1a1a" opacity="0.78"/>
+
+          {/* ── BOTTOM-LEFT pentagon (curving away, slightly faded) ── */}
+          <polygon points="42,62 27,62 20,75 31,86 46,82" fill="#1a1a1a" opacity="0.78"/>
+
+          {/* ── TOP-LEFT pentagon (partially cut by sphere edge) ── */}
+          <polygon points="34,37 20,35 11,47 15,62 30,60" fill="#1a1a1a" opacity="0.92"/>
+
+          {/* ── Seam lines between patches (thin lines = stitching) ── */}
+          <line x1="62" y1="36" x2="66" y2="37" stroke="#333" strokeWidth="1" opacity="0.55"/>
+          <line x1="38" y1="36" x2="34" y2="37" stroke="#333" strokeWidth="1" opacity="0.55"/>
+          <line x1="70" y1="60" x2="73" y2="62" stroke="#333" strokeWidth="1" opacity="0.50"/>
+          <line x1="58" y1="62" x2="54" y2="62" stroke="#333" strokeWidth="1" opacity="0.45"/>
+          <line x1="42" y1="62" x2="46" y2="62" stroke="#333" strokeWidth="1" opacity="0.45"/>
+          <line x1="27" y1="62" x2="30" y2="60" stroke="#333" strokeWidth="1" opacity="0.50"/>
         </svg>
         <div className="kickup-ball-shine" />
       </div>
