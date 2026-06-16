@@ -4,8 +4,9 @@ import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { Shield } from 'lucide-react'
-import { getSession, getInitials, isAdmin, hashColor } from '@/lib/session'
+import { getSession, getInitials, isAdmin, hashColor, clearSession } from '@/lib/session'
 import { useNameModal } from '@/hooks/useNameModal'
+import { motion } from 'framer-motion'
 
 const NAV_LINKS = [
   { href: '/',        label: 'Acasă' },
@@ -54,16 +55,22 @@ export function Navbar() {
 
   const admin = session && isAdmin(session.name)
 
-  // On the dark hero home page, before scrolling: transparent navbar
+  // At the top of the home page: dark green frosted navbar
+  // Once scrolled (or on any other page): glass/white navbar
   const transparent = isHome && !scrolled
-  const navBg = transparent
-    ? 'bg-transparent border-transparent'
-    : 'glass border-black/[0.06]'
   const textColor = transparent ? 'text-white/90' : 'text-gray-600'
   const logoColor = transparent ? 'text-white' : 'gradient-text'
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 border-b px-4 h-16 flex items-center justify-between transition-all duration-300 ${navBg}`}>
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 border-b px-4 h-16 flex items-center justify-between transition-all duration-300 ${transparent ? '' : 'glass border-black/[0.06]'}`}
+      style={transparent ? {
+        background: 'rgba(8, 24, 12, 0.72)',
+        borderColor: 'rgba(22, 163, 74, 0.18)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
+      } : {}}
+    >
       <Link href="/" className={`text-xl font-black tracking-tight ${logoColor}`}>
         KickUp
       </Link>
@@ -82,7 +89,11 @@ export function Navbar() {
                 }`}>
                 {link.label}
                 {active && !transparent && (
-                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-green-500" />
+                  <motion.span
+                    layoutId="nav-active-dot"
+                    className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-green-500"
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  />
                 )}
               </Link>
             )
@@ -134,9 +145,7 @@ export function Navbar() {
                 </Link>
                 <div className="border-t border-black/[0.05] pt-2">
                   <button onClick={() => {
-                    localStorage.removeItem('kickup_name')
-                    localStorage.removeItem('kickup_session_id')
-                    localStorage.removeItem('kickup_avatar')
+                    clearSession()
                     window.location.href = '/'
                   }} className="text-sm text-red-400 hover:text-red-600 transition-colors w-full text-left">
                     Deconectare
@@ -146,7 +155,7 @@ export function Navbar() {
             )}
           </div>
         ) : (
-          <button onClick={open}
+          <button onClick={() => open()}
             className={`ml-1 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
               transparent
                 ? 'border border-white/25 text-white hover:bg-white/10'

@@ -5,7 +5,9 @@ import { Navbar } from "@/components/Navbar";
 import { BottomNav } from "@/components/BottomNav";
 import { NameModal } from "@/components/NameModal";
 import { InstructionsModal } from "@/components/InstructionsModal";
+import { CookieBanner } from "@/components/CookieBanner";
 import { Toaster } from "@/components/ui/toaster";
+import { PageTransition } from "@/components/PageTransition";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,10 +30,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-background text-foreground">
         <Navbar />
         {/* pt-16 = navbar height; pb-16 on mobile = bottom nav height */}
-        <main className="pt-16 pb-16 md:pb-0">{children}</main>
+        <main className="pt-16 pb-16 md:pb-0"><PageTransition>{children}</PageTransition></main>
         <BottomNav />
         <NameModal />
         <InstructionsModal />
+        <CookieBanner />
         <Toaster />
       </body>
     </html>

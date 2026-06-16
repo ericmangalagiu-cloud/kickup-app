@@ -1,5 +1,69 @@
 import { supabase } from './supabase'
 
+/* ─── Cookie helpers (365-day persistent session) ────────────────────────── */
+const COOKIE_KEY  = 'kickup_sid'
+const COOKIE_DAYS = 365
+
+function setCookie(sessionId: string) {
+  if (typeof document === 'undefined') return
+  const exp = new Date(Date.now() + COOKIE_DAYS * 864e5).toUTCString()
+  document.cookie = `${COOKIE_KEY}=${encodeURIComponent(sessionId)}; expires=${exp}; path=/; SameSite=Lax`
+}
+
+function getCookie(): string | null {
+  if (typeof document === 'undefined') return null
+  const m = document.cookie.match(new RegExp('(?:^|; )' + COOKIE_KEY + '=([^;]*)'))
+  return m ? decodeURIComponent(m[1]) : null
+}
+
+function deleteCookie() {
+  if (typeof document === 'undefined') return
+  document.cookie = `${COOKIE_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`
+}
+
+/** Clear localStorage + cookie on logout */
+export function clearSession() {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem('kickup_name')
+  localStorage.removeItem('kickup_session_id')
+  localStorage.removeItem('kickup_avatar')
+  deleteCookie()
+}
+
+/**
+ * If localStorage has no session but the 365-day cookie still exists,
+ * verify the session_id against the DB and silently restore it.
+ * Returns true if a session is now available.
+ */
+export async function tryRestoreSession(): Promise<boolean> {
+  if (typeof window === 'undefined') return false
+
+  // Already have a valid local session
+  if (localStorage.getItem('kickup_session_id')) return true
+
+  const sid = getCookie()
+  if (!sid) return false
+
+  const { data } = await supabase
+    .from('users')
+    .select('name, avatar')
+    .eq('session_id', sid)
+    .maybeSingle()
+
+  if (!data) { deleteCookie(); return false }
+
+  localStorage.setItem('kickup_name',       data.name)
+  localStorage.setItem('kickup_session_id', sid)
+  if (data.avatar) localStorage.setItem('kickup_avatar', data.avatar)
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('session-updated'))
+  }
+  return true
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+
 export async function signUp(name: string, password: string): Promise<{ success: boolean; error?: string }> {
   const nameLower = name.trim().toLowerCase()
 
@@ -38,6 +102,7 @@ export async function signUp(name: string, password: string): Promise<{ success:
 
   localStorage.setItem('kickup_name', name.trim())
   localStorage.setItem('kickup_session_id', sessionId)
+  setCookie(sessionId)
   // Signal that a brand-new account was just created (shows instructions modal)
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('signup-complete'))
@@ -69,6 +134,7 @@ export async function logIn(name: string, password: string): Promise<{ success: 
 
   localStorage.setItem('kickup_name', user.name)
   localStorage.setItem('kickup_session_id', user.session_id)
+  setCookie(user.session_id)
   return { success: true }
 }
 

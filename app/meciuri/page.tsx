@@ -8,14 +8,48 @@ import { Lock, ChevronDown, Check } from 'lucide-react'
 import { supabase, Game } from '@/lib/supabase'
 import { GameCard } from '@/components/GameCard'
 import { ROMANIAN_CITIES } from '@/hooks/useCityStore'
+import { motion, AnimatePresence, useInView } from 'framer-motion'
 
-const LEVELS = ['Toate', 'Beginner', 'Intermediate', 'Advanced']
-const LEVEL_LABELS: Record<string, string> = {
-  Toate: 'Toate nivelele',
-  Beginner: 'Beginner',
-  Intermediate: 'Intermediate',
-  Advanced: 'Advanced',
+const LEVELS = ['Toate', 'Începător', 'Intermediar', 'Avansat', 'Orice nivel']
+
+/* ══════════════ VARIANTS ══════════════ */
+
+const titleVariants = {
+  initial: { clipPath: 'inset(0 100% 0 0)', opacity: 0 },
+  animate: {
+    clipPath: 'inset(0 0% 0 0)',
+    opacity: 1,
+    transition: { duration: 0.6, ease: 'easeOut' as const },
+  },
 }
+
+const gridVariants = {
+  initial: {},
+  animate: {
+    transition: { staggerChildren: 0.07 },
+  },
+}
+
+const cardVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring' as const, stiffness: 120, damping: 20 },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.95,
+    transition: { duration: 0.18 },
+  },
+}
+
+const skeletonVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.3 } },
+}
+
+/* ══════════════ DROPDOWN ══════════════ */
 
 function DropdownBtn({
   label, value, options, onChange
@@ -63,6 +97,8 @@ function DropdownBtn({
   )
 }
 
+/* ══════════════ PAGE ══════════════ */
+
 export default function MeciuriPage() {
   const [search, setSearch] = useState('')
   const [level, setLevel] = useState('Toate')
@@ -73,7 +109,63 @@ export default function MeciuriPage() {
   const [playerCounts, setPlayerCounts] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
 
+  // For the title clip-path wipe
+  const titleRef = useRef<HTMLDivElement>(null)
+  const titleInView = useInView(titleRef, { once: true, amount: 0.5 })
+
   useEffect(() => { fetchGames() }, [city, showAll])
+
+  function nowTime(): string {
+    const n = new Date()
+    return `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`
+  }
+
+  function hasStarted(g: Game): boolean {
+    const today = new Date().toISOString().split('T')[0]
+    if (g.date < today) return true
+    if (g.date === today && g.start_time <= nowTime()) return true
+    return false
+  }
+
+  async function archiveStartedGames(started: Game[]) {
+    if (started.length === 0) return
+    try {
+      const rows = await Promise.all(
+        started.map(async (g) => {
+          const { count } = await supabase
+            .from('players')
+            .select('*', { count: 'exact', head: true })
+            .eq('game_id', g.id)
+            .eq('status', 'active')
+          return {
+            original_id:           g.id,
+            name:                  g.name,
+            location:              g.location,
+            city:                  g.city,
+            date:                  g.date,
+            start_time:            g.start_time,
+            end_time:              g.end_time,
+            level:                 g.level,
+            num_teams:             g.num_teams,
+            players_per_team:      g.players_per_team,
+            price:                 g.price,
+            is_private:            g.is_private,
+            organizer_name:        g.organizer_name,
+            organizer_session_id:  g.organizer_session_id,
+            players_count:         count ?? 0,
+          }
+        })
+      )
+      const { error } = await supabase.from('games_archive').insert(rows)
+      if (!error) {
+        const ids = started.map(g => g.id)
+        await supabase.from('players').delete().in('game_id', ids)
+        await supabase.from('games').delete().in('id', ids)
+      }
+    } catch {
+      // Archive table may not exist yet — silently skip
+    }
+  }
 
   async function fetchGames() {
     setLoading(true)
@@ -83,8 +175,13 @@ export default function MeciuriPage() {
     if (city) query = query.eq('city', city)
     const { data: gamesData } = await query
     if (gamesData) {
-      setGames(gamesData)
-      const ids = gamesData.map(g => g.id)
+      const started = gamesData.filter(hasStarted)
+      const active  = gamesData.filter(g => !hasStarted(g))
+
+      if (started.length > 0) archiveStartedGames(started)
+
+      setGames(active)
+      const ids = active.map(g => g.id)
       if (ids.length > 0) {
         const { data: rows } = await supabase.from('players').select('game_id').in('game_id', ids).eq('status', 'active')
         const counts: Record<string, number> = {}
@@ -98,7 +195,7 @@ export default function MeciuriPage() {
 
   const filtered = games.filter(g => {
     if (search && !g.name.toLowerCase().includes(search.toLowerCase())) return false
-    if (level !== 'Toate' && g.level?.toLowerCase() !== level.toLowerCase()) return false
+    if (level !== 'Toate' && g.level !== level) return false
     const total = g.num_teams * g.players_per_team
     if (showAvailable && (playerCounts[g.id] || 0) >= total) return false
     return true
@@ -107,14 +204,20 @@ export default function MeciuriPage() {
   const cityOptions = ['', ...ROMANIAN_CITIES]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #f2f8f4 0%, #f5f9f6 100%)' }}>
+
       {/* Header */}
       <div className="bg-white border-b border-black/[0.06] px-5 py-5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-extrabold text-gray-900">
+          <div ref={titleRef}>
+            <motion.h1
+              variants={titleVariants}
+              initial="initial"
+              animate={titleInView ? 'animate' : 'initial'}
+              className="text-2xl font-extrabold text-gray-900"
+            >
               {city ? `Meciuri în ${city}` : 'Toate meciurile'}
-            </h1>
+            </motion.h1>
             <p className="text-gray-400 text-sm mt-0.5">
               {loading ? 'Se încarcă...' : `${filtered.length} meciuri disponibile`}
             </p>
@@ -128,28 +231,13 @@ export default function MeciuriPage() {
       {/* Sticky filters */}
       <div className="bg-white border-b border-black/[0.06] px-5 py-3 sticky top-16 z-30 shadow-sm">
         <div className="max-w-6xl mx-auto flex flex-col gap-3">
-          {/* Search */}
           <input type="text" placeholder="Caută după numele meciului..."
             value={search} onChange={e => setSearch(e.target.value)}
             className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-black/[0.08] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm transition-all" />
 
-          {/* Dropdowns + toggles */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Level dropdown */}
-            <DropdownBtn
-              label="Nivel"
-              value={level}
-              options={LEVELS}
-              onChange={setLevel}
-            />
-
-            {/* City dropdown */}
-            <DropdownBtn
-              label="Oraș"
-              value={city}
-              options={cityOptions}
-              onChange={v => { setCity(v); }}
-            />
+            <DropdownBtn label="Nivel" value={level} options={LEVELS} onChange={setLevel} />
+            <DropdownBtn label="Oraș" value={city} options={cityOptions} onChange={v => { setCity(v); }} />
 
             <div className="flex items-center gap-4 ml-1">
               <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer select-none">
@@ -179,14 +267,39 @@ export default function MeciuriPage() {
       {/* Grid */}
       <div className="max-w-6xl mx-auto px-5 py-8 pb-24 sm:pb-8">
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          /* Shimmer skeleton */
+          <motion.div
+            variants={skeletonVariants}
+            initial="initial"
+            animate="animate"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          >
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl h-52 animate-pulse border border-black/[0.06]"
-                style={{ animationDelay: `${i * 80}ms` }} />
+              <div
+                key={i}
+                className="rounded-2xl h-52 overflow-hidden border border-black/[0.06] relative"
+                style={{ animationDelay: `${i * 80}ms` }}
+              >
+                <div className="skeleton-shimmer absolute inset-0" />
+                {/* Skeleton content shapes */}
+                <div className="absolute inset-0 p-5 flex flex-col gap-3 pointer-events-none">
+                  <div className="h-3 w-1/3 rounded-full bg-white/60" />
+                  <div className="h-5 w-2/3 rounded-full bg-white/60" />
+                  <div className="h-3 w-1/2 rounded-full bg-white/60" />
+                  <div className="flex-1" />
+                  <div className="h-px w-full bg-white/60" />
+                  <div className="h-3 w-1/4 rounded-full bg-white/60" />
+                </div>
+              </div>
             ))}
-          </div>
+          </motion.div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-24">
+          <motion.div
+            variants={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 80, damping: 20 } } }}
+            initial="initial"
+            animate="animate"
+            className="text-center py-24"
+          >
             <div className="text-5xl mb-4">⚽</div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">Niciun meci găsit</h3>
             <p className="text-gray-400 mb-6 text-sm">
@@ -195,20 +308,32 @@ export default function MeciuriPage() {
             <Link href="/create" className="btn-gradient inline-block px-6 py-3 font-semibold text-sm">
               Creează primul meci
             </Link>
-          </div>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((game, index) => {
-              const total = game.num_teams * game.players_per_team
-              const joined = playerCounts[game.id] || 0
-              return (
-                <div key={game.id}
-                  style={{ animation: `heroSlideUp 0.5s ease-out ${Math.min(index, 8) * 60}ms both` }}>
-                  <GameCard game={game} spotsLeft={Math.max(0, total - joined)} totalSpots={total} />
-                </div>
-              )
-            })}
-          </div>
+          <motion.div
+            key={`${city}-${showAll}-${level}-${search}-${showAvailable}`}
+            variants={gridVariants}
+            initial="initial"
+            animate="animate"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          >
+            <AnimatePresence mode="popLayout">
+              {filtered.map((game) => {
+                const total = game.num_teams * game.players_per_team
+                const joined = playerCounts[game.id] || 0
+                return (
+                  <motion.div
+                    key={game.id}
+                    variants={cardVariants}
+                    exit="exit"
+                    layout
+                  >
+                    <GameCard game={game} spotsLeft={Math.max(0, total - joined)} totalSpots={total} />
+                  </motion.div>
+                )
+              })}
+            </AnimatePresence>
+          </motion.div>
         )}
       </div>
     </div>

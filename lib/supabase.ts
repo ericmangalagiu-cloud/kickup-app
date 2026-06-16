@@ -21,6 +21,7 @@ export type Game = {
   password_plain: string | null
   organizer_name: string
   organizer_session_id: string
+  description: string | null
   created_at: string
 }
 

@@ -130,7 +130,7 @@ export default function GamePage() {
   async function deleteGame() {
     if (!confirm('Ești sigur că vrei să ștergi acest meci? Această acțiune nu poate fi anulată.')) return
     await supabase.from('games').delete().eq('id', id)
-    router.push('/')
+    router.push('/meciuri')
   }
 
   async function confirmOptOut() {
@@ -205,7 +205,7 @@ export default function GamePage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 animate-fade-in">
-      <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-700 transition-colors mb-6">
+      <Link href="/meciuri" className="inline-flex items-center gap-2 text-gray-400 hover:text-gray-700 transition-colors mb-6">
         <ArrowLeft size={16} /> Toate meciurile
       </Link>
 

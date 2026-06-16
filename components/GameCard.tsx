@@ -1,10 +1,10 @@
 'use client'
 
-import { useRef } from 'react'
 import Link from 'next/link'
 import { Game } from '@/lib/supabase'
 import { formatDate, formatTime } from '@/lib/utils'
 import { MapPin, Calendar, Users, Banknote, Lock, Crown } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 interface GameCardProps {
   game: Game
@@ -12,45 +12,70 @@ interface GameCardProps {
   totalSpots: number
 }
 
-const levelColors: Record<string, { badge: string; dot: string }> = {
-  beginner:     { badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: '#10b981' },
-  intermediate: { badge: 'bg-amber-50 text-amber-700 border-amber-200',       dot: '#f59e0b' },
-  advanced:     { badge: 'bg-red-50 text-red-600 border-red-200',             dot: '#ef4444' },
+const levelColors: Record<string, { badge: string }> = {
+  'Începător':  { badge: 'bg-green-50 text-green-700 border-green-200' },
+  'Intermediar':{ badge: 'bg-amber-50 text-amber-600 border-amber-200' },
+  'Avansat':    { badge: 'bg-blue-50 text-blue-600 border-blue-200'   },
+  'Orice nivel':{ badge: 'bg-gray-50 text-gray-500 border-gray-200'   },
+}
+
+/* Card lift + border glow on hover */
+const cardVariants = {
+  rest: {
+    y: 0,
+    scale: 1,
+    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+  },
+  hover: {
+    y: -8,
+    scale: 1.02,
+    boxShadow: '0 0 0 2px rgba(22,163,74,0.32), 0 20px 40px rgba(22,163,74,0.13), 0 8px 16px rgba(0,0,0,0.08)',
+    transition: { type: 'spring' as const, stiffness: 300, damping: 20 },
+  },
+}
+
+/* "Locuri" player name row nudge on hover */
+const playerRowVariants = {
+  rest: { x: 0 },
+  hover: {
+    x: 4,
+    transition: { type: 'spring' as const, stiffness: 300, damping: 20 },
+  },
+}
+
+/* Urgent badge pulse */
+const badgePulseVariants = {
+  animate: {
+    scale: [1, 1.06, 1],
+    transition: { duration: 2, repeat: Infinity, ease: 'easeInOut' as const },
+  },
+}
+
+/* "Vezi →" text shimmer on hover (opacity fade) */
+const viewBtnVariants = {
+  rest: { opacity: 0.7 },
+  hover: {
+    opacity: 1,
+    transition: { type: 'spring' as const, stiffness: 300, damping: 20 },
+  },
 }
 
 export function GameCard({ game, spotsLeft, totalSpots }: GameCardProps) {
-  const cardRef = useRef<HTMLDivElement>(null)
-  const isFull = spotsLeft === 0
-  const isUrgent = spotsLeft > 0 && spotsLeft <= 3
-  const fillPct = Math.min(100, ((totalSpots - spotsLeft) / totalSpots) * 100)
-  const levelInfo = game.level ? levelColors[game.level as keyof typeof levelColors] : null
-
-  function onMouseMove(e: React.MouseEvent<HTMLDivElement>) {
-    const el = cardRef.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    const x = (e.clientX - rect.left) / rect.width - 0.5
-    const y = (e.clientY - rect.top) / rect.height - 0.5
-    el.classList.add('tilt-card')
-    el.classList.remove('tilt-card-reset')
-    el.style.transform = `perspective(700px) rotateY(${x * 10}deg) rotateX(${-y * 10}deg) translateY(-3px) scale(1.01)`
-    el.style.boxShadow = `${-x * 12}px ${-y * 12}px 40px rgba(22,163,74,0.12), 0 12px 32px rgba(0,0,0,0.07)`
-  }
-
-  function onMouseLeave() {
-    const el = cardRef.current
-    if (!el) return
-    el.classList.add('tilt-card-reset')
-    el.classList.remove('tilt-card')
-    el.style.transform = 'perspective(700px) rotateY(0deg) rotateX(0deg) translateY(0) scale(1)'
-    el.style.boxShadow = ''
-  }
+  const isFull    = spotsLeft === 0
+  const isUrgent  = spotsLeft > 0 && spotsLeft <= 3
+  const fillPct   = Math.min(100, ((totalSpots - spotsLeft) / totalSpots) * 100)
+  const levelKey  = game.level ?? 'Orice nivel'
+  const levelInfo = levelColors[levelKey] ?? levelColors['Orice nivel']
 
   return (
     <Link href={`/game/${game.id}`} className="block h-full">
-      <div ref={cardRef} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave}
-        className="bg-white rounded-2xl cursor-pointer group border border-black/[0.07] h-full flex flex-col overflow-hidden shadow-sm">
-
+      <motion.div
+        variants={cardVariants}
+        initial="rest"
+        whileHover="hover"
+        animate="rest"
+        className="bg-white rounded-2xl cursor-pointer border border-black/[0.07] h-full flex flex-col overflow-hidden"
+      >
         {/* Progress fill strip at top */}
         <div className="h-1 w-full bg-gray-100 flex-shrink-0">
           <div className="h-full transition-all duration-500 rounded-full"
@@ -80,15 +105,17 @@ export function GameCard({ game, spotsLeft, totalSpots }: GameCardProps) {
                 <span className="text-[11px] bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-full">Full</span>
               )}
               {isUrgent && !isFull && (
-                <span className="text-[11px] bg-orange-50 text-orange-600 border border-orange-200 px-2 py-0.5 rounded-full whitespace-nowrap">
+                <motion.span
+                  variants={badgePulseVariants}
+                  animate="animate"
+                  className="text-[11px] bg-orange-50 text-orange-600 border border-orange-200 px-2 py-0.5 rounded-full whitespace-nowrap inline-block"
+                >
                   🔥 {spotsLeft} locuri
-                </span>
+                </motion.span>
               )}
-              {levelInfo && (
-                <span className={`text-[11px] border px-2 py-0.5 rounded-full capitalize ${levelInfo.badge}`}>
-                  {game.level}
-                </span>
-              )}
+              <span className={`text-[11px] border px-2 py-0.5 rounded-full ${levelInfo.badge}`}>
+                {levelKey}
+              </span>
             </div>
           </div>
 
@@ -102,12 +129,15 @@ export function GameCard({ game, spotsLeft, totalSpots }: GameCardProps) {
               <Calendar size={12} className="text-green-600 flex-shrink-0" />
               {formatDate(game.date)} · {formatTime(game.start_time)}–{formatTime(game.end_time)}
             </p>
-            <p className="flex items-center gap-2">
+            <motion.p
+              variants={playerRowVariants}
+              className="flex items-center gap-2"
+            >
               <Users size={12} className={`flex-shrink-0 ${isFull ? 'text-red-500' : 'text-green-600'}`} />
               <span className={`font-medium ${isFull ? 'text-red-500' : isUrgent ? 'text-orange-600' : 'text-green-700'}`}>
                 {spotsLeft} / {totalSpots} locuri rămase
               </span>
-            </p>
+            </motion.p>
             <p className="flex items-center gap-2">
               <Banknote size={12} className="text-green-600 flex-shrink-0" />
               {game.price}
@@ -120,12 +150,15 @@ export function GameCard({ game, spotsLeft, totalSpots }: GameCardProps) {
               <Crown size={11} className="text-amber-400 flex-shrink-0" />
               <span className="truncate">{game.organizer_name}</span>
             </div>
-            <span className="text-xs text-green-600 group-hover:text-green-700 font-semibold flex-shrink-0 ml-2">
+            <motion.span
+              variants={viewBtnVariants}
+              className="text-xs text-green-600 font-semibold flex-shrink-0 ml-2"
+            >
               Vezi →
-            </span>
+            </motion.span>
           </div>
         </div>
-      </div>
+      </motion.div>
     </Link>
   )
 }

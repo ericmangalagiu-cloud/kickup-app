@@ -12,6 +12,24 @@ import { getSession } from '@/lib/session'
 import { useNameModal } from '@/hooks/useNameModal'
 import { ROMANIAN_CITIES } from '@/hooks/useCityStore'
 
+function MoreInfoField({ value, onChange, inputClass }: { value: string; onChange: (v: string) => void; inputClass: string }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        Informații suplimentare <span className="text-gray-400 font-normal">(opțional)</span>
+      </label>
+      <textarea
+        className={inputClass + ' resize-none min-h-[90px]'}
+        placeholder="ex: terenul din spate, aduceți apă, parcare la intrarea stângă, regulile meciului..."
+        value={value}
+        maxLength={600}
+        onChange={e => onChange(e.target.value)}
+      />
+      <p className="text-right text-xs text-gray-400 mt-1">{value.length}/600</p>
+    </div>
+  )
+}
+
 export default function CreatePage() {
   const router = useRouter()
   const { open } = useNameModal()
@@ -20,7 +38,7 @@ export default function CreatePage() {
   const [form, setForm] = useState({
     name: '', location: '', city: '', date: '', start_time: '', end_time: '',
     level: '', num_teams: '2', players_per_team: '7', price: '',
-    is_private: false, password: '',
+    is_private: false, password: '', description: '',
   })
 
   const today = new Date().toISOString().split('T')[0]
@@ -32,7 +50,7 @@ export default function CreatePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const session = getSession()
-    if (!session) { open(); return }
+    if (!session) { open('/create'); return }
     if (!form.city) return alert('Please select a city')
     if (form.is_private && !form.password) return alert('Please set a password for private games')
     setLoading(true)
@@ -52,6 +70,7 @@ export default function CreatePage() {
       password_plain: form.is_private ? form.password : null,
       organizer_name: session.name,
       organizer_session_id: session.sessionId,
+      ...(form.description.trim() ? { description: form.description.trim() } : {}),
     }).select().single()
 
     if (error) {
@@ -101,7 +120,8 @@ export default function CreatePage() {
         <div className="grid grid-cols-1 gap-4">
           <div>
             <label className={labelClass}>Data *</label>
-            <input required type="date" min={today} className={inputClass} value={form.date} onChange={e => set('date', e.target.value)} />
+            <input required type="date" min={today} className={inputClass} value={form.date} onChange={e => set('date', e.target.value)}
+              style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none', width: '100%' }} />
           </div>
           <div>
             <label className={labelClass}>Nivel</label>
@@ -141,6 +161,10 @@ export default function CreatePage() {
           <label className={labelClass}>Contribuție <span className="text-gray-400 font-normal">(opțional)</span></label>
           <input className={inputClass} placeholder="ex: 20 RON sau Gratuit" value={form.price} onChange={e => set('price', e.target.value)} />
         </div>
+
+        {/* More info — collapsible */}
+        <MoreInfoField value={form.description} onChange={v => set('description', v)} inputClass={inputClass} />
+
         <div>
           <label className="flex items-center gap-3 cursor-pointer">
             <div

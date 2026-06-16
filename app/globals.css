@@ -139,11 +139,31 @@
   from { opacity: 0; transform: translateY(28px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.hero-anim-1 { animation: heroSlideUp 0.65s ease-out 0.05s both; }
-.hero-anim-2 { animation: heroSlideUp 0.65s ease-out 0.20s both; }
-.hero-anim-3 { animation: heroSlideUp 0.65s ease-out 0.38s both; }
-.hero-anim-4 { animation: heroSlideUp 0.65s ease-out 0.54s both; }
-.hero-anim-5 { animation: heroSlideUp 0.65s ease-out 0.70s both; }
+
+/* ═══ SKELETON SHIMMER ═══ */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e9ebef 37%, #f3f4f6 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+/* ═══ HERO BG PULSE ═══ */
+@keyframes heroPulse {
+  0%, 100% { transform: scale(1);   opacity: 0.18; }
+  50%       { transform: scale(1.2); opacity: 0.28; }
+}
+.hero-bg-pulse { animation: heroPulse 4s ease-in-out infinite; }
+
+/* ═══ FIRE WIGGLE ═══ */
+@keyframes fireWiggle {
+  0%, 100% { transform: rotate(-10deg); }
+  50%       { transform: rotate(10deg); }
+}
+.fire-wiggle { animation: fireWiggle 0.8s linear infinite; display: inline-block; }
 
 /* ═══ CARD TILT (set by JS) ═══ */
 .tilt-card {

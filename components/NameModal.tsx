@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
-import { getSession, signUp, logIn, isLegacyAccount } from '@/lib/session'
+import { Eye, EyeOff, Loader2, X } from 'lucide-react'
+import { getSession, signUp, logIn, isLegacyAccount, tryRestoreSession, clearSession } from '@/lib/session'
 import { useNameModal } from '@/hooks/useNameModal'
 
 type Mode = 'signup' | 'login'
 
 export function NameModal() {
-  const { isOpen, open, close } = useNameModal()
+  const { isOpen, redirectTo, close } = useNameModal()
   const [mode, setMode] = useState<Mode>('login')
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
@@ -21,18 +21,23 @@ export function NameModal() {
 
   useEffect(() => {
     setMounted(true)
-    const session = getSession()
-    if (!session) {
-      open()
-    } else {
-      isLegacyAccount(session.sessionId).then(legacy => {
-        if (legacy) {
-          localStorage.removeItem('kickup_name')
-          localStorage.removeItem('kickup_session_id')
-          open()
-        }
-      })
+
+    async function checkAuth() {
+      // 1. Try to restore from 365-day cookie if localStorage is empty
+      await tryRestoreSession()
+
+      // 2. Only force login if user has a legacy (invalid) session_id in storage.
+      //    No session at all → totally fine, they can browse freely.
+      const session = getSession()
+      if (!session) return
+
+      // 3. If the stored session_id no longer exists in DB (legacy), clear it silently.
+      //    Don't pop the modal; let them browse as guest until they try to act.
+      const legacy = await isLegacyAccount(session.sessionId)
+      if (legacy) clearSession()
     }
+
+    checkAuth()
   }, [])
 
   function switchMode(next: Mode) {
@@ -74,7 +79,7 @@ export function NameModal() {
 
       window.dispatchEvent(new Event('session-updated'))
       close()
-      window.location.href = '/'
+      window.location.href = redirectTo || window.location.pathname
     } catch (err) {
       console.error('Auth error:', err)
       setError('Eroare de conexiune. Încearcă din nou.')
@@ -85,8 +90,19 @@ export function NameModal() {
   const inputClass = "w-full px-4 py-3 rounded-xl bg-gray-50 border border-black/[0.08] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-t-3xl sm:rounded-2xl p-7 w-full max-w-md mx-0 sm:mx-4 animate-slide-up shadow-xl border border-black/[0.07]">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/20 backdrop-blur-sm animate-fade-in overflow-y-auto"
+      style={{ paddingTop: 'max(5vh, env(safe-area-inset-top, 16px) + 16px)', paddingBottom: 'max(5vh, 16px)', paddingLeft: 16, paddingRight: 16 }}
+      onClick={e => { if (e.target === e.currentTarget) close() }}>
+      <div className="bg-white rounded-2xl p-7 w-full max-w-md animate-fade-in shadow-xl border border-black/[0.07] relative">
+        {/* Close button */}
+        <button
+          onClick={close}
+          className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
+          aria-label="Închide"
+        >
+          <X size={18} />
+        </button>
+
         {/* Icon */}
         <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-5" style={{ background: 'linear-gradient(135deg, #16a34a, #0d9488)' }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
