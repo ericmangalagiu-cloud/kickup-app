@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ChevronRight, Search, Zap, Trophy, ChevronLeft, Clock, MapPin, Users, Mail } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { motion, useInView } from 'framer-motion'
+import ScrollExpandMedia from '@/components/ui/scroll-expansion-hero'
 
 /* ─── Real FBX football (client-only, no SSR) ─── */
 const Football3D = dynamic(() => import('@/components/Football3D'), {
@@ -407,173 +408,17 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="overflow-x-hidden">
-
-      {/* ══════════════ HERO ══════════════ */}
-      <section
-        className="relative min-h-screen flex flex-col justify-center"
-        style={{ background: 'linear-gradient(150deg, #0a2010 0%, #0e3018 40%, #071608 100%)' }}
+    <div className="-mt-16">
+      <ScrollExpandMedia
+        mediaType="video"
+        mediaSrc="/hero-video.mp4"
+        bgImageSrc="https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=1920&auto=format&fit=crop"
+        title="Fotbal pickup"
+        date="🇷🇴 România"
+        scrollToExpand="Scroll pentru a descoperi ↓"
+        textBlend
       >
-        {/* Pulsing background orbs */}
-        <div className="absolute top-16 right-1/4 w-[600px] h-[600px] pointer-events-none">
-          <div className="w-full h-full rounded-full hero-bg-pulse"
-            style={{ background: 'radial-gradient(circle, rgba(22,163,74,0.18) 0%, transparent 70%)' }} />
-        </div>
-        <div className="absolute bottom-1/4 left-0 w-80 h-80 pointer-events-none">
-          <div className="w-full h-full rounded-full"
-            style={{ background: 'radial-gradient(circle, rgba(13,148,136,0.12) 0%, transparent 70%)', animation: 'heroPulse 5s ease-in-out 2s infinite' }} />
-        </div>
-        <div className="absolute top-1/2 right-10 w-52 h-52 pointer-events-none">
-          <div className="w-full h-full rounded-full"
-            style={{ background: 'radial-gradient(circle, rgba(74,222,128,0.08) 0%, transparent 70%)', animation: 'heroPulse 6s ease-in-out 1s infinite' }} />
-        </div>
-
-        <div className="relative max-w-7xl mx-auto px-5 pt-24 pb-32 w-full">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-
-            {/* Left: animated text */}
-            <motion.div
-              className="flex-1 max-w-xl text-center lg:text-left"
-              variants={heroContainerVars}
-              initial="initial"
-              animate="animate"
-            >
-              {/* Badge */}
-              <motion.div
-                variants={heroBadgeVars}
-                className="inline-flex items-center gap-2 rounded-full px-4 py-2 mb-8 text-sm font-medium text-green-300"
-                style={{ background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.30)' }}
-              >
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block" />
-                Fotbal pickup în toată România
-              </motion.div>
-
-              {/* Heading — words stagger in from y:40 */}
-              <motion.h1
-                variants={heroHeadingVars}
-                className="font-black leading-none mb-6"
-                style={{ fontSize: 'clamp(54px, 8.5vw, 96px)' }}
-              >
-                <motion.span variants={heroWordVars} className="block text-white">
-                  Găsește
-                </motion.span>
-                <motion.span variants={heroWordVars} className="block"
-                  style={{ background: 'linear-gradient(135deg, #86efac 0%, #4ade80 35%, #22c55e 65%, #0d9488 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                  meciuri
-                </motion.span>
-                <motion.span variants={heroWordVars} className="block text-white/90">
-                  în orașul tău
-                </motion.span>
-              </motion.h1>
-
-              {/* Tagline */}
-              <motion.p
-                variants={heroTaglineVars}
-                className="text-gray-300 text-lg sm:text-xl leading-relaxed mb-10 max-w-md mx-auto lg:mx-0"
-              >
-                Organizează sau înscrie-te într-un meci de fotbal pickup. Fără complicații, în câteva secunde.
-              </motion.p>
-
-              {/* CTA buttons — stagger scale-in */}
-              <motion.div
-                variants={heroCTAContainerVars}
-                className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
-              >
-                <motion.div variants={heroCTABtnVars}>
-                  <Link href="/meciuri"
-                    className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-white font-bold text-lg transition-all duration-200 hover:brightness-110"
-                    style={{ background: 'linear-gradient(135deg, #16a34a, #0d9488)', boxShadow: '0 0 40px rgba(22,163,74,0.45)' }}>
-                    Explorează meciuri <ChevronRight size={20} />
-                  </Link>
-                </motion.div>
-                <motion.div variants={heroCTABtnVars}>
-                  <Link href="/create"
-                    className="inline-flex items-center justify-center px-8 py-4 rounded-2xl text-white font-semibold text-lg transition-all duration-200 hover:bg-white/8"
-                    style={{ border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)' }}>
-                    Creează un meci
-                  </Link>
-                </motion.div>
-              </motion.div>
-            </motion.div>
-
-            {/* Right: 3D ball + floating cards */}
-            <div className="relative flex-shrink-0 mt-6 lg:mt-0">
-              {/* Left ghost card */}
-              <motion.div
-                className="absolute -left-[170px] top-6 hidden lg:block"
-                style={{ zIndex: 0, animation: 'floatCard1 7s ease-in-out infinite' }}
-                variants={ghostCardVars}
-                initial="rest"
-                whileHover="hover"
-                animate="rest"
-              >
-                <GhostCard
-                  name="Magic Arena 5v5"
-                  city="Iași"
-                  spots={3}
-                  time="19:00 – 21:00"
-                  joined={7}
-                  max={10}
-                />
-              </motion.div>
-
-              {/* Ball */}
-              <div className="relative" style={{ zIndex: 1 }}>
-                <Football3D size={280} />
-              </div>
-
-              {/* Right ghost card */}
-              <motion.div
-                className="absolute -right-[50px] bottom-6 hidden lg:block"
-                style={{ zIndex: 0, animation: 'floatCard2 8s ease-in-out 1.5s infinite' }}
-                variants={ghostCardVars}
-                initial="rest"
-                whileHover="hover"
-                animate="rest"
-              >
-                <GhostCard
-                  name="Seara de Fotbal"
-                  city="Cluj-Napoca"
-                  spots={1}
-                  time="20:00 – 22:00"
-                  joined={13}
-                  max={14}
-                />
-              </motion.div>
-            </div>
-          </div>
-
-          {/* Stats — stagger in from y:30 */}
-          <motion.div
-            variants={statsContainerVars}
-            initial="initial"
-            animate="animate"
-            className="grid grid-cols-3 gap-4 mt-16 max-w-sm sm:max-w-md mx-auto lg:mx-0 border-t pt-8"
-            style={{ borderColor: 'rgba(255,255,255,0.08)' }}
-          >
-            {[
-              { target: 340, suffix: '+', label: 'Jucători' },
-              { target: 28, suffix: '+', label: 'Meciuri active' },
-              { target: 20, suffix: '', label: 'Orașe' },
-            ].map((s, i) => (
-              <motion.div key={i} variants={statItemVars} className="text-center lg:text-left">
-                <div className="text-3xl sm:text-4xl font-black text-white tabular-nums">
-                  <Counter target={s.target} suffix={s.suffix} />
-                </div>
-                <div className="text-gray-400 text-sm mt-1">{s.label}</div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-
-        {/* Wave */}
-        <div className="absolute bottom-0 left-0 right-0 pointer-events-none leading-[0]">
-          <svg viewBox="0 0 1440 72" preserveAspectRatio="none" style={{ width: '100%', height: 72, display: 'block' }}>
-            <path d="M0,36 C240,72 480,0 720,36 C960,72 1200,10 1440,36 L1440,72 L0,72 Z" fill="white" />
-          </svg>
-        </div>
-      </section>
-
+        <div className="overflow-x-hidden">
       {/* ══════════════ HOW IT WORKS ══════════════ */}
       <section className="py-24 px-5 bg-white">
         <div className="max-w-5xl mx-auto">
@@ -929,6 +774,8 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+        </div>
+      </ScrollExpandMedia>
     </div>
   )
 }
