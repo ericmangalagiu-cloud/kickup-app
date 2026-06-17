@@ -53,16 +53,24 @@ const ScrollExpandMedia = ({
     progressRef.current = 0;
   }, [mediaType]);
 
-  // Mobile autoplay fix: iOS blocks autoplay until first user gesture.
-  // Play programmatically on first touch.
+  // Autoplay fix: call play() once the browser has buffered enough data.
+  // `autoPlay` alone isn't reliable on iOS — `canplay` fires at the right moment.
   useEffect(() => {
-    if (mediaType !== 'video') return;
+    if (mediaType !== 'video' || !videoRef.current) return;
+    const video = videoRef.current;
+
     const tryPlay = () => {
-      videoRef.current?.play().catch(() => {});
+      if (video.paused) video.play().catch(() => {});
     };
-    tryPlay();
-    document.addEventListener('touchstart', tryPlay, { once: true });
-    return () => document.removeEventListener('touchstart', tryPlay);
+
+    video.addEventListener('canplay', tryPlay);
+    video.addEventListener('loadeddata', tryPlay);
+    tryPlay(); // also fire immediately in case video is already cached
+
+    return () => {
+      video.removeEventListener('canplay', tryPlay);
+      video.removeEventListener('loadeddata', tryPlay);
+    };
   }, [mediaType]);
 
   useEffect(() => {
