@@ -108,7 +108,6 @@ export default function MeciuriPage() {
   const [games, setGames] = useState<Game[]>([])
   const [playerCounts, setPlayerCounts] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
-
   // For the title clip-path wipe
   const titleRef = useRef<HTMLDivElement>(null)
   const titleInView = useInView(titleRef, { once: true, amount: 0.5 })
@@ -233,7 +232,7 @@ export default function MeciuriPage() {
         <div className="max-w-6xl mx-auto flex flex-col gap-3">
           <input type="text" placeholder="Caută după numele meciului..."
             value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-black/[0.08] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm transition-all" />
+            className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-black/[0.08] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm" />
 
           <div className="flex flex-wrap items-center gap-2.5">
             <DropdownBtn label="Nivel" value={level} options={LEVELS} onChange={setLevel} />

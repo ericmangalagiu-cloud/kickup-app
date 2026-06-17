@@ -8,6 +8,7 @@ import { InstructionsModal } from "@/components/InstructionsModal";
 import { CookieBanner } from "@/components/CookieBanner";
 import { Toaster } from "@/components/ui/toaster";
 import { PageTransition } from "@/components/PageTransition";
+import { CursorTrail } from "@/components/CursorTrail";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <InstructionsModal />
         <CookieBanner />
         <Toaster />
+        <CursorTrail />
       </body>
     </html>
   );
