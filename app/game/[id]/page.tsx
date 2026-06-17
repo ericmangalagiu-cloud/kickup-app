@@ -199,8 +199,9 @@ export default function GamePage() {
     )
   }
 
-  const status = isPast ? 'Past' : activePlayers.length >= totalSpots ? 'Full' : 'Open'
-  const statusColor = { Open: 'text-green-700 bg-green-50 border-green-200', Full: 'text-red-600 bg-red-50 border-red-200', Past: 'text-gray-500 bg-gray-100 border-gray-200' }[status]
+  const status: 'Full' | 'Past' | null = isPast ? 'Past' : activePlayers.length >= totalSpots ? 'Full' : null
+  const statusColors: Record<string, string> = { Full: 'text-red-600 bg-red-50 border-red-200', Past: 'text-gray-500 bg-gray-100 border-gray-200' }
+  const statusColor = status ? statusColors[status] : ''
   const progressPct = Math.min(100, (activePlayers.length / totalSpots) * 100)
 
   return (
@@ -213,7 +214,7 @@ export default function GamePage() {
       <div className="flex items-start justify-between mb-6">
         <div className="flex-1">
           <h1 className="text-3xl font-extrabold gradient-text mb-2">{game.name}</h1>
-          <span className={`text-xs font-medium px-3 py-1 rounded-full border ${statusColor}`}>{status}</span>
+          {status && <span className={`text-xs font-medium px-3 py-1 rounded-full border ${statusColor}`}>{status}</span>}
         </div>
         {isOrganizer && (
           <Link href={`/game/${id}/edit`} className="ml-4 flex items-center gap-1.5 text-sm bg-white px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 transition-colors border border-black/[0.08] shadow-sm">

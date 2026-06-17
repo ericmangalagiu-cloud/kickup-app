@@ -583,7 +583,6 @@ export default function LandingPage() {
           </Reveal>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10 relative">
-            <div className="hidden sm:block absolute top-7 left-[calc(16.66%+1.5rem)] right-[calc(16.66%+1.5rem)] h-0.5 bg-gradient-to-r from-green-200 via-green-300 to-green-200" />
 
             {[
               {

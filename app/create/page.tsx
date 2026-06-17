@@ -144,7 +144,12 @@ export default function CreatePage() {
           </div>
           <div>
             <label className={labelClass}>Ora de final *</label>
-            <TimePicker value={form.end_time} onChange={v => set('end_time', v)} required />
+            <TimePicker
+              value={form.end_time}
+              onChange={v => set('end_time', v)}
+              required
+              minHour={form.start_time ? (parseInt(form.start_time.split(':')[0]) + 1) % 24 : undefined}
+            />
           </div>
         </div>
         <div className="grid grid-cols-1 gap-4">

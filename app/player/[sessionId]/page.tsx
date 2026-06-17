@@ -46,12 +46,34 @@ export default function PlayerPage() {
     setSession(s)
 
     async function load() {
-      const { data } = await supabase
+      let { data } = await supabase
         .from('users')
         .select('name, avatar, bio, age, favourite_team, nationality, best_foot, preferred_position, created_at')
         .eq('session_id', sessionId)
         .maybeSingle()
-      if (!data) { router.push('/'); return }
+
+      // Fallback: build a minimal profile from games table (organizer without a user record)
+      if (!data) {
+        const { data: gameRow } = await supabase
+          .from('games')
+          .select('organizer_name, created_at')
+          .eq('organizer_session_id', sessionId)
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle()
+        if (!gameRow) { router.push('/'); return }
+        data = {
+          name: gameRow.organizer_name,
+          avatar: null,
+          bio: null,
+          age: null,
+          favourite_team: null,
+          nationality: null,
+          best_foot: null,
+          preferred_position: null,
+          created_at: gameRow.created_at,
+        }
+      }
       setProfile(data)
 
       if (s) {
@@ -69,11 +91,11 @@ export default function PlayerPage() {
       // load organized games
       const { data: games } = await supabase
         .from('games')
-        .select('id, title, city, date, time')
+        .select('id, name, city, date, start_time')
         .eq('organizer_session_id', sessionId)
         .order('date', { ascending: false })
         .limit(10)
-      setOrganizedGames(games || [])
+      setOrganizedGames((games || []).map((g: any) => ({ id: g.id, title: g.name, city: g.city, date: g.date, time: g.start_time })))
       setLoading(false)
     }
     load()
