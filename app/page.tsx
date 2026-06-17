@@ -412,9 +412,8 @@ export default function LandingPage() {
       <ScrollExpandMedia
         mediaType="video"
         mediaSrc="/hero-video.mp4"
-        bgImageSrc="https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=1920&auto=format&fit=crop"
+        bgColor="#0a0f0a"
         title="Fotbal pickup"
-        date="🇷🇴 România"
         scrollToExpand="Scroll pentru a descoperi ↓"
         textBlend
       >
