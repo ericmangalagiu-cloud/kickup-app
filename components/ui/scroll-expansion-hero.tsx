@@ -274,7 +274,7 @@ const ScrollExpandMedia = ({
             }`}
           >
             <h2
-              className='text-5xl md:text-7xl lg:text-8xl font-black text-white drop-shadow-2xl'
+              className='text-5xl md:text-7xl lg:text-8xl font-black text-gray-900 drop-shadow-sm'
               style={{ transform: `translateX(-${textTranslateX}vw)` }}
             >
               {firstWord}
@@ -306,7 +306,7 @@ const ScrollExpandMedia = ({
               </p>
             )}
             {scrollToExpand && (
-              <p className='text-white/60 font-medium text-sm'>
+              <p className='text-gray-500 font-medium text-sm'>
                 {scrollToExpand}
               </p>
             )}

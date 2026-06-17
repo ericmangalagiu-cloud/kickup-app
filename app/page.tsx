@@ -412,7 +412,7 @@ export default function LandingPage() {
       <ScrollExpandMedia
         mediaType="video"
         mediaSrc="/hero-video.mp4"
-        bgColor="#0a0f0a"
+        bgColor="linear-gradient(180deg, #f2f8f4 0%, #f5f9f6 100%)"
         title="Fotbal pickup"
         scrollToExpand="Scroll pentru a descoperi ↓"
         textBlend
