@@ -268,13 +268,9 @@ const ScrollExpandMedia = ({
         <div
           className='absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none'
         >
-          <div
-            className={`flex items-center justify-center text-center gap-4 w-full ${
-              textBlend ? 'mix-blend-difference' : ''
-            }`}
-          >
+          <div className='flex items-center justify-center text-center gap-4 w-full'>
             <h2
-              className='text-5xl md:text-7xl lg:text-8xl font-black text-gray-900 drop-shadow-sm'
+              className='text-5xl md:text-7xl lg:text-8xl font-black text-white drop-shadow-2xl'
               style={{ transform: `translateX(-${textTranslateX}vw)` }}
             >
               {firstWord}
@@ -284,7 +280,7 @@ const ScrollExpandMedia = ({
                 className='text-5xl md:text-7xl lg:text-8xl font-black text-center drop-shadow-2xl'
                 style={{
                   transform: `translateX(${textTranslateX}vw)`,
-                  background: 'linear-gradient(135deg, #86efac 0%, #4ade80 50%, #0d9488 100%)',
+                  background: 'linear-gradient(135deg, #d9f99d 0%, #86efac 20%, #4ade80 45%, #22c55e 68%, #0d9488 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',

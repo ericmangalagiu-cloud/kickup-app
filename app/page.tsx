@@ -415,7 +415,6 @@ export default function LandingPage() {
         bgColor="#1a4731"
         title="Fotbal pickup"
         scrollToExpand="Scroll pentru a descoperi ↓"
-        textBlend
       >
         <div className="overflow-x-hidden">
       {/* ══════════════ HOW IT WORKS ══════════════ */}
