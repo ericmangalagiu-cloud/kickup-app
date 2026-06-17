@@ -37,14 +37,14 @@ const ScrollExpandMedia = ({
   children,
 }: ScrollExpandMediaProps) => {
   const [scrollProgress, setScrollProgress] = useState<number>(0);
-  const [showContent, setShowContent] = useState<boolean>(false);
+  const [showContent, setShowContent]       = useState<boolean>(false);
   const [mediaFullyExpanded, setMediaFullyExpanded] = useState<boolean>(false);
-  const [isMobileState, setIsMobileState] = useState<boolean>(false);
+  const [isMobileState, setIsMobileState]   = useState<boolean>(false);
 
-  const heroRef   = useRef<HTMLDivElement | null>(null);
-  const videoRef  = useRef<HTMLVideoElement | null>(null);
-  const touchY0   = useRef<number>(0);          // use ref, not state, for perf
-  const progressRef = useRef<number>(0);         // mirror of scrollProgress in a ref
+  const heroRef    = useRef<HTMLDivElement | null>(null);
+  const videoRef   = useRef<HTMLVideoElement | null>(null);
+  const touchY0    = useRef<number>(0);
+  const progressRef = useRef<number>(0);
 
   useEffect(() => {
     setScrollProgress(0);
@@ -53,33 +53,25 @@ const ScrollExpandMedia = ({
     progressRef.current = 0;
   }, [mediaType]);
 
-  // Autoplay fix: call play() once the browser has buffered enough data.
-  // `autoPlay` alone isn't reliable on iOS — `canplay` fires at the right moment.
+  // Autoplay: fire play() as soon as the browser has buffered enough data
   useEffect(() => {
     if (mediaType !== 'video' || !videoRef.current) return;
     const video = videoRef.current;
-
-    const tryPlay = () => {
-      if (video.paused) video.play().catch(() => {});
-    };
-
-    video.addEventListener('canplay', tryPlay);
+    const tryPlay = () => { if (video.paused) video.play().catch(() => {}); };
+    video.addEventListener('canplay',    tryPlay);
     video.addEventListener('loadeddata', tryPlay);
-    tryPlay(); // also fire immediately in case video is already cached
-
+    tryPlay();
     return () => {
-      video.removeEventListener('canplay', tryPlay);
+      video.removeEventListener('canplay',    tryPlay);
       video.removeEventListener('loadeddata', tryPlay);
     };
   }, [mediaType]);
 
   useEffect(() => {
-    const checkIfMobile = (): void => {
-      setIsMobileState(window.innerWidth < 768);
-    };
-    checkIfMobile();
-    window.addEventListener('resize', checkIfMobile);
-    return () => window.removeEventListener('resize', checkIfMobile);
+    const check = () => setIsMobileState(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
   useEffect(() => {
@@ -91,61 +83,46 @@ const ScrollExpandMedia = ({
         e.preventDefault();
       } else if (!mediaFullyExpanded) {
         e.preventDefault();
-        const newProgress = Math.min(Math.max(progressRef.current + e.deltaY * 0.0009, 0), 1);
-        progressRef.current = newProgress;
-        setScrollProgress(newProgress);
-        if (newProgress >= 1) {
-          setMediaFullyExpanded(true);
-          setShowContent(true);
-        } else if (newProgress < 0.75) {
-          setShowContent(false);
-        }
+        const next = Math.min(Math.max(progressRef.current + e.deltaY * 0.0009, 0), 1);
+        progressRef.current = next;
+        setScrollProgress(next);
+        if (next >= 1)      { setMediaFullyExpanded(true); setShowContent(true); }
+        else if (next < 0.75) { setShowContent(false); }
       }
     };
 
     // ── Touch (mobile) ───────────────────────────────────────────────────────
+    // touch-action:none on the hero element (set below via CSS) already blocks
+    // native scroll during the animation — so we can keep ALL listeners passive.
     const handleTouchStart = (e: TouchEvent) => {
       touchY0.current = e.touches[0].clientY;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!touchY0.current) return;
+      if (!touchY0.current || mediaFullyExpanded) return;
       const touchY  = e.touches[0].clientY;
-      const deltaY  = touchY0.current - touchY;   // positive = swipe up
-
-      if (!mediaFullyExpanded) {
-        // Block native scroll during the expansion animation
-        e.preventDefault();
-        const factor     = deltaY < 0 ? 0.010 : 0.007; // faster sensitivity on mobile
-        const newProgress = Math.min(Math.max(progressRef.current + deltaY * factor, 0), 1);
-        progressRef.current = newProgress;
-        setScrollProgress(newProgress);
-        touchY0.current = touchY; // delta from last frame, not from start
-        if (newProgress >= 1) {
-          setMediaFullyExpanded(true);
-          setShowContent(true);
-        } else if (newProgress < 0.75) {
-          setShowContent(false);
-        }
-      }
-      // Once expanded: don't touch the event — let native scroll handle it freely
+      const deltaY  = touchY0.current - touchY;          // + = swipe up
+      const factor  = deltaY < 0 ? 0.008 : 0.005;       // same as original component
+      const next    = Math.min(Math.max(progressRef.current + deltaY * factor, 0), 1);
+      progressRef.current = next;
+      touchY0.current = touchY;                          // frame-to-frame delta
+      setScrollProgress(next);
+      if (next >= 1)       { setMediaFullyExpanded(true); setShowContent(true); }
+      else if (next < 0.75) { setShowContent(false); }
     };
 
     const handleTouchEnd = () => { touchY0.current = 0; };
 
-    // Keep scroll locked at 0 while animation is in progress
-    const handleScroll = () => {
-      if (!mediaFullyExpanded) window.scrollTo(0, 0);
-    };
+    // Safety-net: keep scroll locked at 0 while animating (keyboard, etc.)
+    const handleScroll = () => { if (!mediaFullyExpanded) window.scrollTo(0, 0); };
 
+    // Wheel needs passive:false to call preventDefault
     window.addEventListener('wheel', handleWheel as unknown as EventListener, { passive: false });
     window.addEventListener('scroll', handleScroll);
-
-    // passive:false ONLY during animation; once expanded we re-register as passive
-    const touchOpts = { passive: !mediaFullyExpanded } as AddEventListenerOptions;
-    window.addEventListener('touchstart', handleTouchStart as unknown as EventListener, touchOpts);
-    window.addEventListener('touchmove',  handleTouchMove  as unknown as EventListener, { passive: mediaFullyExpanded });
-    window.addEventListener('touchend',   handleTouchEnd);
+    // Touch listeners are ALL passive — touch-action:none handles scroll blocking
+    window.addEventListener('touchstart', handleTouchStart as unknown as EventListener, { passive: true });
+    window.addEventListener('touchmove',  handleTouchMove  as unknown as EventListener, { passive: true });
+    window.addEventListener('touchend',   handleTouchEnd,                               { passive: true });
 
     return () => {
       window.removeEventListener('wheel',      handleWheel as unknown as EventListener);
@@ -154,10 +131,10 @@ const ScrollExpandMedia = ({
       window.removeEventListener('touchmove',  handleTouchMove  as unknown as EventListener);
       window.removeEventListener('touchend',   handleTouchEnd);
     };
-  }, [mediaFullyExpanded]); // re-registers listeners when expansion state flips
+  }, [mediaFullyExpanded]);
 
-  const mediaWidth  = 300 + scrollProgress * (isMobileState ? 650 : 1250);
-  const mediaHeight = 400 + scrollProgress * (isMobileState ? 200 : 400);
+  const mediaWidth     = 300 + scrollProgress * (isMobileState ? 650 : 1250);
+  const mediaHeight    = 400 + scrollProgress * (isMobileState ? 200 : 400);
   const textTranslateX = scrollProgress * (isMobileState ? 180 : 150);
   const borderRadius   = Math.round((1 - scrollProgress) * 16);
 
@@ -166,13 +143,17 @@ const ScrollExpandMedia = ({
 
   return (
     <div className='relative'>
-      {/*
-        STICKY HERO — stays pinned at top while children scroll over it.
-        Video element never leaves the viewport → browser never suspends it.
-      */}
       <div
         ref={heroRef}
-        style={{ position: 'sticky', top: 0, height: '100dvh', zIndex: 0, overflow: 'hidden' }}
+        style={{
+          position: 'sticky',
+          top: 0,
+          height: '100dvh',
+          zIndex: 0,
+          overflow: 'hidden',
+          // Blocks native scroll/zoom on touch during animation without passive:false
+          touchAction: mediaFullyExpanded ? 'auto' : 'none',
+        }}
       >
         {/* ── Background ── */}
         <motion.div
@@ -315,7 +296,7 @@ const ScrollExpandMedia = ({
         </div>
       </div>
 
-      {/* ── Children scroll over the sticky hero ── */}
+      {/* ── Children scroll over sticky hero ── */}
       <motion.div
         style={{ position: 'relative', zIndex: 10 }}
         initial={{ opacity: 0 }}
