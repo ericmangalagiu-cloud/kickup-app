@@ -418,9 +418,9 @@ export default function LandingPage() {
       >
         <div className="overflow-x-hidden">
       {/* ══════════════ HOW IT WORKS ══════════════ */}
-      <section className="py-24 px-5 bg-white">
+      <section className="py-16 sm:py-24 px-5 bg-white">
         <div className="max-w-5xl mx-auto">
-          <Reveal className="text-center mb-16">
+          <Reveal className="text-center mb-10 sm:mb-16">
             <p className="text-green-600 font-semibold text-sm uppercase tracking-widest mb-3">Simplu de tot</p>
             <h2 className="text-4xl sm:text-5xl font-black text-gray-900">Cum funcționează?</h2>
           </Reveal>
@@ -472,7 +472,7 @@ export default function LandingPage() {
                       {s.n}
                     </motion.div>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">{s.title}</h3>
                     <p className="text-gray-500 leading-relaxed text-[15px]">{s.desc}</p>
                   </div>
@@ -484,7 +484,7 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════ GAME CAROUSEL ══════════════ */}
-      <section className="py-24 px-0 overflow-hidden" style={{ background: '#f8fafb' }}>
+      <section className="py-16 sm:py-24 px-0 overflow-hidden" style={{ background: '#f8fafb' }}>
         <div className="max-w-5xl mx-auto px-5 mb-10">
           <Reveal className="flex items-end justify-between">
             <div>
@@ -605,9 +605,9 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════ FEATURES / DE CE KICKUP ══════════════ */}
-      <section className="bg-white py-24 px-5">
+      <section className="bg-white py-16 sm:py-24 px-5">
         <div className="max-w-5xl mx-auto">
-          <Reveal className="text-center mb-16">
+          <Reveal className="text-center mb-10 sm:mb-16">
             <p className="text-green-600 font-semibold text-sm uppercase tracking-widest mb-3">De ce KickUp?</p>
             <h2 className="text-4xl sm:text-5xl font-black text-gray-900">Fotbal, simplu.</h2>
           </Reveal>
@@ -627,7 +627,7 @@ export default function LandingPage() {
                   className="rounded-3xl h-full overflow-hidden"
                   style={{ background: '#fafafa', cursor: 'pointer' }}
                 >
-                  <Link href={f.href} className="block h-full p-8 flex flex-col" style={{ textDecoration: 'none' }}>
+                  <Link href={f.href} className="block h-full p-6 sm:p-8 flex flex-col" style={{ textDecoration: 'none' }}>
                     {/* Icon */}
                     <motion.div
                       variants={featureIconVars}
@@ -660,7 +660,7 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════ CTA ══════════════ */}
-      <section className="py-28 px-5 relative overflow-hidden"
+      <section className="py-20 sm:py-28 px-5 relative overflow-hidden"
         style={{ background: 'linear-gradient(150deg, #0a2010 0%, #0e3018 50%, #071608 100%)' }}>
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="w-[600px] h-[600px] rounded-full hero-bg-pulse"
@@ -693,7 +693,7 @@ export default function LandingPage() {
 
       {/* ══════════════ FOOTER ══════════════ */}
       <footer style={{ background: '#080d0b', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="max-w-5xl mx-auto px-5 pt-16 pb-10 grid grid-cols-2 sm:grid-cols-4 gap-10">
+        <div className="max-w-5xl mx-auto px-5 pt-14 pb-10 grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-10 sm:gap-10">
 
           {/* Brand */}
           <div className="col-span-2 sm:col-span-2">

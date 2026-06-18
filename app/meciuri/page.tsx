@@ -241,19 +241,19 @@ export default function MeciuriPage() {
             <div className="flex items-center gap-4 ml-1">
               <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer select-none">
                 <div onClick={() => setShowAvailable(!showAvailable)}
-                  className="w-9 h-5 rounded-full transition-all cursor-pointer relative flex-shrink-0"
+                  className="w-11 h-6 rounded-full transition-all cursor-pointer relative flex-shrink-0"
                   style={{ background: showAvailable ? '#16a34a' : '#e5e7eb' }}>
-                  <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow-sm"
-                    style={{ left: showAvailable ? '1.125rem' : '0.125rem' }} />
+                  <div className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow-sm"
+                    style={{ left: showAvailable ? '1.375rem' : '0.125rem' }} />
                 </div>
                 Locuri disponibile
               </label>
               <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer select-none">
                 <div onClick={() => setShowAll(!showAll)}
-                  className="w-9 h-5 rounded-full transition-all cursor-pointer relative flex-shrink-0"
+                  className="w-11 h-6 rounded-full transition-all cursor-pointer relative flex-shrink-0"
                   style={{ background: showAll ? '#16a34a' : '#e5e7eb' }}>
-                  <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow-sm"
-                    style={{ left: showAll ? '1.125rem' : '0.125rem' }} />
+                  <div className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow-sm"
+                    style={{ left: showAll ? '1.375rem' : '0.125rem' }} />
                 </div>
                 <Lock size={12} className={showAll ? 'text-green-600' : 'text-gray-400'} />
                 Private

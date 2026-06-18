@@ -232,8 +232,8 @@ export default function GamePage() {
         <p className="flex items-center gap-2 text-gray-700"><Banknote size={14} className="text-green-600 flex-shrink-0" />{game.price}</p>
         <p className="flex items-center gap-2 text-gray-700"><Target size={14} className="text-green-600 flex-shrink-0" />{game.level ? game.level.charAt(0).toUpperCase() + game.level.slice(1) : 'Open to all'}</p>
         {/* Organizer row with clickable link */}
-        <div className="flex items-center gap-2 pt-1 border-t border-black/[0.05]">
-          <Crown size={14} className="text-amber-500" />
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-2 border-t border-black/[0.05]">
+          <Crown size={14} className="text-amber-500 flex-shrink-0" />
           <span className="text-gray-600">
             Organizator: <span className="text-gray-900 font-medium">{game.organizer_name}</span>
           </span>
