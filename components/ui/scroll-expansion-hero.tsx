@@ -197,7 +197,10 @@ const ScrollExpandMedia = ({
           }}
         >
           {mediaType === 'video' ? (
-            <div className='relative w-full h-full pointer-events-none'>
+            <div
+              className='relative w-full h-full pointer-events-none'
+              style={{ overflow: 'hidden', borderRadius: `${borderRadius}px` }}
+            >
               <video
                 ref={videoRef}
                 src={mediaSrc}
@@ -211,8 +214,10 @@ const ScrollExpandMedia = ({
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
-                  borderRadius: `${borderRadius}px`,
                   display: 'block',
+                  // Scale up as it expands so the video's baked-in rounded
+                  // corners get pushed past the container edge and clipped
+                  transform: `scale(${1 + scrollProgress * 0.06})`,
                 }}
                 controls={false}
                 disablePictureInPicture
