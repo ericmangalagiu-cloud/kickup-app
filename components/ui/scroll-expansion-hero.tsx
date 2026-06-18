@@ -281,7 +281,7 @@ const ScrollExpandMedia = ({
           </div>
 
           <div
-            className='flex flex-col items-center gap-1 mt-6'
+            className='absolute bottom-12 left-0 right-0 flex flex-col items-center gap-1'
             style={{ opacity: Math.max(0, 1 - scrollProgress * 4) }}
           >
             {date && (
