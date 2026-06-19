@@ -44,16 +44,16 @@ const ScrollExpandMedia = ({
   const heroRef    = useRef<HTMLDivElement | null>(null);
   const videoRef   = useRef<HTMLVideoElement | null>(null);
   const touchY0    = useRef<number>(0);
-  const progressRef = useRef<number>(0);
-  const velocityRef = useRef<number>(0);   // progress units/frame — drives the coast/recoil
-  const coastRafRef = useRef<number>(0);
-  const wheelStopRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const progressRef = useRef<number>(0);   // rendered (smoothed) progress
+  const targetRef   = useRef<number>(0);   // where the scroll wants progress to be
+  const rafRef      = useRef<number>(0);   // smoothing-loop frame id
 
   useEffect(() => {
     setScrollProgress(0);
     setShowContent(false);
     setMediaFullyExpanded(false);
     progressRef.current = 0;
+    targetRef.current = 0;
   }, [mediaType]);
 
   // Autoplay: fire play() as soon as the browser has buffered enough data
@@ -80,74 +80,65 @@ const ScrollExpandMedia = ({
   useEffect(() => {
     const clamp = (v: number) => Math.min(Math.max(v, 0), 1);
 
-    // Push progress to a new value and keep the expand/content flags in sync
-    const applyProgress = (next: number) => {
+    // Scroll/touch sets a TARGET; a single rAF loop eases the rendered
+    // progress toward it each frame. This is the only smoothing — there are
+    // NO CSS transitions on the hero (those trailed behind input = the lag).
+    const SMOOTH = 0.16;        // ease factor per frame (higher = snappier)
+
+    const tick = () => {
+      const target = targetRef.current;
+      const cur    = progressRef.current;
+      const diff   = target - cur;
+      // settled → write the exact target once and stop the loop
+      if (Math.abs(diff) < 0.0006) {
+        if (cur !== target) {
+          progressRef.current = target;
+          setScrollProgress(target);
+          if (target >= 1)        { setMediaFullyExpanded(true); setShowContent(true); }
+          else if (target < 0.75) { setShowContent(false); }
+        }
+        rafRef.current = 0;
+        return;
+      }
+      const next = cur + diff * SMOOTH;   // glide a fraction of the way each frame
       progressRef.current = next;
       setScrollProgress(next);
-      if (next >= 1)        { setMediaFullyExpanded(true); setShowContent(true); }
-      else if (next < 0.75) { setShowContent(false); }
+      if (next >= 0.999)      { setMediaFullyExpanded(true); setShowContent(true); }
+      else if (next < 0.75)   { setShowContent(false); }
+      rafRef.current = requestAnimationFrame(tick);
     };
-
-    // ── Momentum / recoil ──
-    // After the user stops scrolling, keep nudging progress with a decaying
-    // velocity so the video coasts a little further instead of stopping dead.
-    const FRICTION = 0.88;     // per-frame decay (higher = longer coast)
-    const MAX_VEL  = 0.014;    // cap so the recoil stays "a little", not a fling
-    const MIN_VEL  = 0.0006;   // below this we settle and stop the loop
-
-    const coast = () => {
-      if (mediaFullyExpanded || Math.abs(velocityRef.current) < MIN_VEL) {
-        velocityRef.current = 0; coastRafRef.current = 0; return;
-      }
-      const next = clamp(progressRef.current + velocityRef.current);
-      applyProgress(next);
-      velocityRef.current *= FRICTION;
-      if (next <= 0 || next >= 1) { velocityRef.current = 0; coastRafRef.current = 0; return; }
-      coastRafRef.current = requestAnimationFrame(coast);
-    };
-    const stopCoast  = () => { if (coastRafRef.current) { cancelAnimationFrame(coastRafRef.current); coastRafRef.current = 0; } };
-    const startCoast = () => { stopCoast(); coastRafRef.current = requestAnimationFrame(coast); };
-    const recordVel  = (dp: number) => { velocityRef.current = Math.max(-MAX_VEL, Math.min(MAX_VEL, dp)); };
+    const wake = () => { if (!rafRef.current) rafRef.current = requestAnimationFrame(tick); };
 
     // ── Wheel (desktop) ──
     const handleWheel = (e: WheelEvent) => {
       if (mediaFullyExpanded && e.deltaY < 0 && window.scrollY <= 5) {
-        stopCoast();
         setMediaFullyExpanded(false);
         setShowContent(false);
+        targetRef.current = progressRef.current;
         e.preventDefault();
       } else if (!mediaFullyExpanded) {
         e.preventDefault();
-        stopCoast();                                   // active input cancels any coast
-        const dp = e.deltaY * 0.0005;
-        applyProgress(clamp(progressRef.current + dp));
-        recordVel(dp);
-        // when wheel events stop arriving, let it coast on its own
-        if (wheelStopRef.current) clearTimeout(wheelStopRef.current);
-        wheelStopRef.current = setTimeout(startCoast, 50);
+        targetRef.current = clamp(targetRef.current + e.deltaY * 0.0005);
+        wake();
       }
     };
 
     // ── Touch (mobile) ──
     // touch-action:none on the hero blocks native scroll during the animation,
     // so all touch listeners stay passive.
-    const handleTouchStart = (e: TouchEvent) => {
-      stopCoast();
-      touchY0.current = e.touches[0].clientY;
-    };
+    const handleTouchStart = (e: TouchEvent) => { touchY0.current = e.touches[0].clientY; };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!touchY0.current || mediaFullyExpanded) return;
       const touchY = e.touches[0].clientY;
       const deltaY = touchY0.current - touchY;          // + = swipe up
-      const factor = deltaY < 0 ? 0.005 : 0.0032;       // lower = slower, more visible
-      const dp     = deltaY * factor;
-      applyProgress(clamp(progressRef.current + dp));
-      recordVel(dp);
+      const factor = deltaY < 0 ? 0.005 : 0.0032;
+      targetRef.current = clamp(targetRef.current + deltaY * factor);
       touchY0.current = touchY;                          // frame-to-frame delta
+      wake();
     };
 
-    const handleTouchEnd = () => { touchY0.current = 0; startCoast(); };  // release → recoil
+    const handleTouchEnd = () => { touchY0.current = 0; };
 
     // Safety-net: keep scroll locked at 0 while animating (keyboard, etc.)
     const handleScroll = () => { if (!mediaFullyExpanded) window.scrollTo(0, 0); };
@@ -160,8 +151,7 @@ const ScrollExpandMedia = ({
     window.addEventListener('touchend',   handleTouchEnd,                               { passive: true });
 
     return () => {
-      stopCoast();
-      if (wheelStopRef.current) clearTimeout(wheelStopRef.current);
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0; }
       window.removeEventListener('wheel',      handleWheel as unknown as EventListener);
       window.removeEventListener('scroll',     handleScroll);
       window.removeEventListener('touchstart', handleTouchStart as unknown as EventListener);
@@ -175,11 +165,10 @@ const ScrollExpandMedia = ({
   const textTranslateX = scrollProgress * (isMobileState ? 180 : 150);
   const borderRadius   = Math.round((1 - scrollProgress) * 16);
 
-  // Smooth easing so the expansion + title slide are clearly visible even
-  // on a fast swipe — each value eases toward its scroll-driven target.
-  const EASE            = 'cubic-bezier(0.16, 1, 0.3, 1)';
-  const sizeTransition  = `width 0.4s ${EASE}, height 0.4s ${EASE}, box-shadow 0.4s ${EASE}`;
-  const moveTransition  = `transform 0.45s ${EASE}`;
+  // Smoothing is done in the rAF lerp above, so the hero elements render with
+  // NO CSS transition — CSS transitions trailed behind the input and caused lag.
+  const sizeTransition  = 'none';
+  const moveTransition  = 'none';
 
   const firstWord   = title ? title.split(' ')[0] : '';
   const restOfTitle = title ? title.split(' ').slice(1).join(' ') : '';
@@ -275,7 +264,6 @@ const ScrollExpandMedia = ({
                   borderRadius: `${borderRadius}px`,
                   background: `rgba(0,0,0,${Math.max(0, 0.35 - scrollProgress * 0.35)})`,
                   pointerEvents: 'none',
-                  transition: `background 0.55s ${EASE}`,
                 }}
               />
             </div>
@@ -335,7 +323,7 @@ const ScrollExpandMedia = ({
 
           <div
             className='absolute bottom-12 left-0 right-0 flex flex-col items-center gap-1'
-            style={{ opacity: Math.max(0, 1 - scrollProgress * 4), transition: `opacity 0.4s ${EASE}` }}
+            style={{ opacity: Math.max(0, 1 - scrollProgress * 4) }}
           >
             {date && (
               <p className='text-sm font-semibold text-green-300 tracking-widest uppercase'>
