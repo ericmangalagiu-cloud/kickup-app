@@ -83,7 +83,7 @@ const ScrollExpandMedia = ({
         e.preventDefault();
       } else if (!mediaFullyExpanded) {
         e.preventDefault();
-        const next = Math.min(Math.max(progressRef.current + e.deltaY * 0.0009, 0), 1);
+        const next = Math.min(Math.max(progressRef.current + e.deltaY * 0.0005, 0), 1);
         progressRef.current = next;
         setScrollProgress(next);
         if (next >= 1)      { setMediaFullyExpanded(true); setShowContent(true); }
@@ -102,7 +102,7 @@ const ScrollExpandMedia = ({
       if (!touchY0.current || mediaFullyExpanded) return;
       const touchY  = e.touches[0].clientY;
       const deltaY  = touchY0.current - touchY;          // + = swipe up
-      const factor  = deltaY < 0 ? 0.008 : 0.005;       // same as original component
+      const factor  = deltaY < 0 ? 0.005 : 0.0032;      // lower = slower, more visible expansion
       const next    = Math.min(Math.max(progressRef.current + deltaY * factor, 0), 1);
       progressRef.current = next;
       touchY0.current = touchY;                          // frame-to-frame delta
@@ -137,6 +137,12 @@ const ScrollExpandMedia = ({
   const mediaHeight    = 400 + scrollProgress * (isMobileState ? 200 : 400);
   const textTranslateX = scrollProgress * (isMobileState ? 180 : 150);
   const borderRadius   = Math.round((1 - scrollProgress) * 16);
+
+  // Smooth easing so the expansion + title slide are clearly visible even
+  // on a fast swipe — each value eases toward its scroll-driven target.
+  const EASE            = 'cubic-bezier(0.16, 1, 0.3, 1)';
+  const sizeTransition  = `width 0.55s ${EASE}, height 0.55s ${EASE}, box-shadow 0.55s ${EASE}`;
+  const moveTransition  = `transform 0.7s ${EASE}`;
 
   const firstWord   = title ? title.split(' ')[0] : '';
   const restOfTitle = title ? title.split(' ').slice(1).join(' ') : '';
@@ -194,6 +200,7 @@ const ScrollExpandMedia = ({
             boxShadow: scrollProgress < 1
               ? `0 0 ${Math.round(60 * (1 - scrollProgress))}px rgba(0,0,0,0.6)`
               : 'none',
+            transition: sizeTransition,
           }}
         >
           {mediaType === 'video' ? (
@@ -218,6 +225,7 @@ const ScrollExpandMedia = ({
                   // Scale up as it expands so the video's baked-in rounded
                   // corners get pushed past the container edge and clipped
                   transform: `scale(${1 + scrollProgress * 0.06})`,
+                  transition: moveTransition,
                 }}
                 controls={false}
                 disablePictureInPicture
@@ -230,6 +238,7 @@ const ScrollExpandMedia = ({
                   borderRadius: `${borderRadius}px`,
                   background: `rgba(0,0,0,${Math.max(0, 0.35 - scrollProgress * 0.35)})`,
                   pointerEvents: 'none',
+                  transition: `background 0.55s ${EASE}`,
                 }}
               />
             </div>
@@ -265,15 +274,17 @@ const ScrollExpandMedia = ({
           <div className='flex items-center justify-center text-center gap-4 w-full'>
             <h2
               className='text-5xl md:text-7xl lg:text-8xl font-black text-white drop-shadow-2xl'
-              style={{ transform: `translateX(-${textTranslateX}vw)` }}
+              style={{ transform: `translateX(-${textTranslateX}vw)`, transition: moveTransition }}
             >
               {firstWord}
             </h2>
+
             {restOfTitle && (
               <h2
                 className='text-5xl md:text-7xl lg:text-8xl font-black text-center drop-shadow-2xl'
                 style={{
                   transform: `translateX(${textTranslateX}vw)`,
+                  transition: moveTransition,
                   background: 'linear-gradient(135deg, #d9f99d 0%, #86efac 20%, #4ade80 45%, #22c55e 68%, #0d9488 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
@@ -287,7 +298,7 @@ const ScrollExpandMedia = ({
 
           <div
             className='absolute bottom-12 left-0 right-0 flex flex-col items-center gap-1'
-            style={{ opacity: Math.max(0, 1 - scrollProgress * 4) }}
+            style={{ opacity: Math.max(0, 1 - scrollProgress * 4), transition: `opacity 0.4s ${EASE}` }}
           >
             {date && (
               <p className='text-sm font-semibold text-green-300 tracking-widest uppercase'>
