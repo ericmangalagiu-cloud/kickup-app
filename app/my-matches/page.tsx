@@ -21,7 +21,7 @@ type GameItem = {
   players_per_team: number
   organizer_name: string
   organizer_session_id: string
-  role: 'organizer' | 'player'
+  role: 'organizer' | 'player' | 'waitlist'
   activeCount?: number
 }
 
@@ -48,14 +48,16 @@ export default function MyMatchesPage() {
       .select('id, name, city, date, start_time, end_time, num_teams, players_per_team, organizer_name, organizer_session_id')
       .eq('organizer_session_id', sessionId)
 
-    // Games where user is an active player
+    // Games where user is an active player OR on the waitlist
     const { data: playerRows } = await supabase
       .from('players')
-      .select('game_id')
+      .select('game_id, status')
       .eq('session_id', sessionId)
-      .eq('status', 'active')
+      .in('status', ['active', 'waitlist'])
 
-    const playerGameIds = (playerRows || []).map(r => r.game_id)
+    const statusByGame: Record<string, string> = {}
+    ;(playerRows || []).forEach(r => { statusByGame[r.game_id] = r.status })
+    const playerGameIds = Object.keys(statusByGame)
     let playerGames: any[] = []
     if (playerGameIds.length > 0) {
       const { data } = await supabase
@@ -69,7 +71,10 @@ export default function MyMatchesPage() {
     const organizedIds = new Set((organized || []).map(g => g.id))
     const merged: GameItem[] = [
       ...(organized || []).map(g => ({ ...g, role: 'organizer' as const })),
-      ...playerGames.filter(g => !organizedIds.has(g.id)).map(g => ({ ...g, role: 'player' as const })),
+      ...playerGames.filter(g => !organizedIds.has(g.id)).map(g => ({
+        ...g,
+        role: (statusByGame[g.id] === 'waitlist' ? 'waitlist' : 'player') as 'player' | 'waitlist',
+      })),
     ]
 
     // Fetch active player counts
@@ -137,11 +142,15 @@ export default function MyMatchesPage() {
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="text-base font-bold text-gray-900 group-hover:text-green-700 transition-colors">{g.name}</h3>
                   {g.role === 'organizer' ? (
-                    <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                    <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex-shrink-0">
                       <Crown size={10} /> Organizator
                     </span>
+                  ) : g.role === 'waitlist' ? (
+                    <span className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex-shrink-0">
+                      <Clock size={10} /> Listă de așteptare
+                    </span>
                   ) : (
-                    <span className="text-xs text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">Jucător</span>
+                    <span className="text-xs text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full flex-shrink-0">Jucător</span>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">

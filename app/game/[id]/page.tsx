@@ -86,6 +86,7 @@ export default function GamePage() {
   }
 
   const activePlayers = players.filter(p => p.status === 'active')
+  const waitlistPlayers = players.filter(p => p.status === 'waitlist') // ordered by joined_at (fetch order)
   const optedOut = players.filter(p => p.status === 'opted_out')
   const totalSpots = game ? game.num_teams * game.players_per_team : 0
   const spotsLeft = Math.max(0, totalSpots - activePlayers.length)
@@ -94,11 +95,15 @@ export default function GamePage() {
   const myPlayer = players.find(p => p.session_id === session?.sessionId)
   const hasJoined = myPlayer?.status === 'active'
   const hasOptedOut = myPlayer?.status === 'opted_out'
-  const isFull = spotsLeft === 0 && !hasJoined
+  const onWaitlist = myPlayer?.status === 'waitlist'
+  const myWaitlistIndex = waitlistPlayers.findIndex(p => p.session_id === session?.sessionId)
+  const isFull = spotsLeft === 0
+  // A waitlister can take an opened spot if their queue position fits the free spots
+  const canPromote = onWaitlist && myWaitlistIndex >= 0 && myWaitlistIndex < spotsLeft
   const today = new Date().toISOString().split('T')[0]
   const isPast = game && game.date < today
 
-  async function joinGame() {
+  async function joinGame(asWaitlist = false) {
     if (!session) return
     setJoining(true)
     // Check ban
@@ -113,18 +118,47 @@ export default function GamePage() {
         return
       }
     }
-    const nameTaken = activePlayers.some(
-      p => p.name.toLowerCase() === session.name.toLowerCase() && p.session_id !== session.sessionId
+    const nameTaken = players.some(
+      p => (p.status === 'active' || p.status === 'waitlist') &&
+           p.name.toLowerCase() === session.name.toLowerCase() && p.session_id !== session.sessionId
     )
     if (nameTaken) {
       toast({ title: 'Ești deja în meci', description: 'Un jucător cu același nume este deja înscris.' })
       setJoining(false)
       return
     }
-    await supabase.from('players').insert({ game_id: id, name: session.name, session_id: session.sessionId })
+    await supabase.from('players').insert({ game_id: id, name: session.name, session_id: session.sessionId, status: asWaitlist ? 'waitlist' : 'active' })
     await fetchPlayers()
     setJoining(false)
-    toast({ title: 'Te-ai înscris!', description: 'Ești în meci.' })
+    toast(asWaitlist
+      ? { title: 'Ești pe lista de așteptare', description: 'Te anunțăm dacă se eliberează un loc.' }
+      : { title: 'Te-ai înscris!', description: 'Ești în meci.' })
+  }
+
+  // Waitlister takes a freed-up spot. Re-check capacity first to avoid two
+  // people racing into the same opening.
+  async function promoteFromWaitlist() {
+    if (!myPlayer) return
+    setJoining(true)
+    const { data: fresh } = await supabase.from('players').select('status').eq('game_id', id)
+    const activeCount = (fresh || []).filter(p => p.status === 'active').length
+    if (activeCount >= totalSpots) {
+      await fetchPlayers()
+      setJoining(false)
+      toast({ title: 'Locul a fost luat', description: 'Altcineva a intrat primul — ai rămas pe listă.' })
+      return
+    }
+    await supabase.from('players').update({ status: 'active' }).eq('id', myPlayer.id)
+    await fetchPlayers()
+    setJoining(false)
+    toast({ title: 'Ai intrat în meci!', description: 'Un loc s-a eliberat și e al tău.' })
+  }
+
+  async function leaveWaitlist() {
+    if (!myPlayer) return
+    await supabase.from('players').delete().eq('id', myPlayer.id)
+    await fetchPlayers()
+    toast({ title: 'Ai ieșit de pe listă', description: 'Te poți reînscrie oricând.' })
   }
 
   async function deleteGame() {
@@ -278,6 +312,39 @@ export default function GamePage() {
             <p className="text-gray-400 text-sm text-center py-4">Niciun jucător încă — fii primul!</p>
           )}
         </div>
+
+        {/* Waitlist */}
+        {waitlistPlayers.length > 0 && (
+          <div className="mt-5 pt-4 border-t border-black/[0.05]">
+            <div className="flex items-center gap-2 mb-3">
+              <Clock size={15} className="text-amber-500 flex-shrink-0" />
+              <h3 className="text-gray-900 font-bold text-sm">Listă de așteptare ({waitlistPlayers.length})</h3>
+            </div>
+            <div className="space-y-2">
+              {waitlistPlayers.map((p, i) => {
+                const isMe = p.session_id === session?.sessionId
+                const av = playerAvatars[p.session_id]
+                return (
+                  <Link key={p.id} href={`/player/${p.session_id}`}
+                    className="flex items-center gap-3 p-2 rounded-xl transition-all hover:bg-gray-50 group"
+                    style={isMe ? { background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' } : {}}>
+                    <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                    <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                      style={{ background: av ? undefined : `linear-gradient(135deg, ${hashColor(p.name)}, #0d9488)` }}>
+                      {av ? <img src={av} alt={p.name} className="w-full h-full object-cover" /> : getInitials(p.name)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-gray-900 text-sm font-medium group-hover:text-amber-700 transition-colors">{p.name}</span>
+                      {isMe && <span className="ml-2 text-xs text-amber-600">tu</span>}
+                    </div>
+                    <span className="text-xs text-gray-400">{timeAgo(p.joined_at)}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {optedOut.length > 0 && (
           <details className="mt-4">
             <summary className="text-sm text-gray-400 cursor-pointer hover:text-gray-600 transition-colors">Au renunțat ({optedOut.length})</summary>
@@ -305,29 +372,67 @@ export default function GamePage() {
       {/* Action Buttons */}
       {!isPast && (
         <>
-          {!hasJoined && !hasOptedOut && (
-            <button onClick={joinGame} disabled={isFull || joining || !session}
+          {/* Not in the game yet — join, or join the waitlist if it's full */}
+          {!myPlayer && !isFull && (
+            <button onClick={() => joinGame(false)} disabled={joining || !session}
               className="btn-gradient w-full py-4 font-bold text-base mb-4 disabled:opacity-50 disabled:cursor-not-allowed">
-              {joining ? 'Se înscrie...' : isFull ? 'Meci complet' : 'Înscrie-te'}
+              {joining ? 'Se înscrie...' : 'Înscrie-te'}
             </button>
           )}
+          {!myPlayer && isFull && (
+            <button onClick={() => joinGame(true)} disabled={joining || !session}
+              className="w-full py-4 font-bold text-base mb-4 rounded-full text-white transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+              {joining ? 'Se înscrie...' : 'Înscrie-te pe lista de așteptare'}
+            </button>
+          )}
+
           {hasJoined && (
             <button onClick={() => setOptOutModal(true)}
               className="w-full py-4 font-bold text-base mb-4 rounded-full border border-red-300 text-red-500 hover:bg-red-50 transition-all">
               Nu pot veni
             </button>
           )}
+
+          {/* On the waitlist with a spot now open — promote into the game */}
+          {onWaitlist && canPromote && (
+            <div className="mb-4">
+              <button onClick={promoteFromWaitlist} disabled={joining}
+                className="btn-gradient w-full py-4 font-bold text-base disabled:opacity-50 disabled:cursor-not-allowed">
+                {joining ? 'Se înscrie...' : 'S-a eliberat un loc — intră în meci!'}
+              </button>
+              <button onClick={leaveWaitlist}
+                className="w-full mt-2 py-2.5 text-sm font-medium text-gray-400 hover:text-gray-700 transition-colors">
+                Renunță la listă
+              </button>
+            </div>
+          )}
+
+          {/* On the waitlist, still waiting */}
+          {onWaitlist && !canPromote && (
+            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center">
+              <p className="text-amber-800 font-semibold text-sm">Ești pe lista de așteptare</p>
+              <p className="text-amber-600 text-sm mt-0.5">Poziția {myWaitlistIndex + 1} — te anunțăm dacă se eliberează un loc.</p>
+              <button onClick={leaveWaitlist}
+                className="mt-3 text-sm font-medium text-amber-700 hover:text-amber-900 transition-colors underline">
+                Renunță la listă
+              </button>
+            </div>
+          )}
+
           {hasOptedOut && (
             <div className="flex gap-3 mb-4">
               <button disabled className="flex-1 py-4 font-bold text-base rounded-full border border-gray-200 text-gray-400 cursor-not-allowed">Ai renunțat</button>
               <button onClick={async () => {
                 if (!myPlayer) return
-                await supabase.from('players').update({ status: 'active', opt_out_reason: null }).eq('id', myPlayer.id)
+                await supabase.from('players').update({ status: isFull ? 'waitlist' : 'active', opt_out_reason: null }).eq('id', myPlayer.id)
                 await fetchPlayers()
-                toast({ title: 'Bine ai revenit!', description: 'Ești din nou în meci.' })
-              }} disabled={isFull}
-                className="flex-1 py-4 font-bold text-base rounded-full btn-gradient disabled:opacity-50 disabled:cursor-not-allowed">
-                {isFull ? 'Meci complet' : 'Înscrie-te din nou'}
+                toast(isFull
+                  ? { title: 'Ești pe lista de așteptare', description: 'Te anunțăm dacă se eliberează un loc.' }
+                  : { title: 'Bine ai revenit!', description: 'Ești din nou în meci.' })
+              }}
+                className="flex-1 py-4 font-bold text-base rounded-full btn-gradient">
+                {isFull ? 'Listă de așteptare' : 'Înscrie-te din nou'}
               </button>
             </div>
           )}
