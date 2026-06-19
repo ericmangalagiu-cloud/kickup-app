@@ -45,6 +45,9 @@ const ScrollExpandMedia = ({
   const videoRef   = useRef<HTMLVideoElement | null>(null);
   const touchY0    = useRef<number>(0);
   const progressRef = useRef<number>(0);
+  const velocityRef = useRef<number>(0);   // progress units/frame — drives the coast/recoil
+  const coastRafRef = useRef<number>(0);
+  const wheelStopRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     setScrollProgress(0);
@@ -75,43 +78,76 @@ const ScrollExpandMedia = ({
   }, []);
 
   useEffect(() => {
-    // ── Wheel (desktop) ──────────────────────────────────────────────────────
+    const clamp = (v: number) => Math.min(Math.max(v, 0), 1);
+
+    // Push progress to a new value and keep the expand/content flags in sync
+    const applyProgress = (next: number) => {
+      progressRef.current = next;
+      setScrollProgress(next);
+      if (next >= 1)        { setMediaFullyExpanded(true); setShowContent(true); }
+      else if (next < 0.75) { setShowContent(false); }
+    };
+
+    // ── Momentum / recoil ──
+    // After the user stops scrolling, keep nudging progress with a decaying
+    // velocity so the video coasts a little further instead of stopping dead.
+    const FRICTION = 0.88;     // per-frame decay (higher = longer coast)
+    const MAX_VEL  = 0.014;    // cap so the recoil stays "a little", not a fling
+    const MIN_VEL  = 0.0006;   // below this we settle and stop the loop
+
+    const coast = () => {
+      if (mediaFullyExpanded || Math.abs(velocityRef.current) < MIN_VEL) {
+        velocityRef.current = 0; coastRafRef.current = 0; return;
+      }
+      const next = clamp(progressRef.current + velocityRef.current);
+      applyProgress(next);
+      velocityRef.current *= FRICTION;
+      if (next <= 0 || next >= 1) { velocityRef.current = 0; coastRafRef.current = 0; return; }
+      coastRafRef.current = requestAnimationFrame(coast);
+    };
+    const stopCoast  = () => { if (coastRafRef.current) { cancelAnimationFrame(coastRafRef.current); coastRafRef.current = 0; } };
+    const startCoast = () => { stopCoast(); coastRafRef.current = requestAnimationFrame(coast); };
+    const recordVel  = (dp: number) => { velocityRef.current = Math.max(-MAX_VEL, Math.min(MAX_VEL, dp)); };
+
+    // ── Wheel (desktop) ──
     const handleWheel = (e: WheelEvent) => {
       if (mediaFullyExpanded && e.deltaY < 0 && window.scrollY <= 5) {
+        stopCoast();
         setMediaFullyExpanded(false);
         setShowContent(false);
         e.preventDefault();
       } else if (!mediaFullyExpanded) {
         e.preventDefault();
-        const next = Math.min(Math.max(progressRef.current + e.deltaY * 0.0005, 0), 1);
-        progressRef.current = next;
-        setScrollProgress(next);
-        if (next >= 1)      { setMediaFullyExpanded(true); setShowContent(true); }
-        else if (next < 0.75) { setShowContent(false); }
+        stopCoast();                                   // active input cancels any coast
+        const dp = e.deltaY * 0.0005;
+        applyProgress(clamp(progressRef.current + dp));
+        recordVel(dp);
+        // when wheel events stop arriving, let it coast on its own
+        if (wheelStopRef.current) clearTimeout(wheelStopRef.current);
+        wheelStopRef.current = setTimeout(startCoast, 50);
       }
     };
 
-    // ── Touch (mobile) ───────────────────────────────────────────────────────
-    // touch-action:none on the hero element (set below via CSS) already blocks
-    // native scroll during the animation — so we can keep ALL listeners passive.
+    // ── Touch (mobile) ──
+    // touch-action:none on the hero blocks native scroll during the animation,
+    // so all touch listeners stay passive.
     const handleTouchStart = (e: TouchEvent) => {
+      stopCoast();
       touchY0.current = e.touches[0].clientY;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!touchY0.current || mediaFullyExpanded) return;
-      const touchY  = e.touches[0].clientY;
-      const deltaY  = touchY0.current - touchY;          // + = swipe up
-      const factor  = deltaY < 0 ? 0.005 : 0.0032;      // lower = slower, more visible expansion
-      const next    = Math.min(Math.max(progressRef.current + deltaY * factor, 0), 1);
-      progressRef.current = next;
+      const touchY = e.touches[0].clientY;
+      const deltaY = touchY0.current - touchY;          // + = swipe up
+      const factor = deltaY < 0 ? 0.005 : 0.0032;       // lower = slower, more visible
+      const dp     = deltaY * factor;
+      applyProgress(clamp(progressRef.current + dp));
+      recordVel(dp);
       touchY0.current = touchY;                          // frame-to-frame delta
-      setScrollProgress(next);
-      if (next >= 1)       { setMediaFullyExpanded(true); setShowContent(true); }
-      else if (next < 0.75) { setShowContent(false); }
     };
 
-    const handleTouchEnd = () => { touchY0.current = 0; };
+    const handleTouchEnd = () => { touchY0.current = 0; startCoast(); };  // release → recoil
 
     // Safety-net: keep scroll locked at 0 while animating (keyboard, etc.)
     const handleScroll = () => { if (!mediaFullyExpanded) window.scrollTo(0, 0); };
@@ -119,12 +155,13 @@ const ScrollExpandMedia = ({
     // Wheel needs passive:false to call preventDefault
     window.addEventListener('wheel', handleWheel as unknown as EventListener, { passive: false });
     window.addEventListener('scroll', handleScroll);
-    // Touch listeners are ALL passive — touch-action:none handles scroll blocking
     window.addEventListener('touchstart', handleTouchStart as unknown as EventListener, { passive: true });
     window.addEventListener('touchmove',  handleTouchMove  as unknown as EventListener, { passive: true });
     window.addEventListener('touchend',   handleTouchEnd,                               { passive: true });
 
     return () => {
+      stopCoast();
+      if (wheelStopRef.current) clearTimeout(wheelStopRef.current);
       window.removeEventListener('wheel',      handleWheel as unknown as EventListener);
       window.removeEventListener('scroll',     handleScroll);
       window.removeEventListener('touchstart', handleTouchStart as unknown as EventListener);
@@ -141,8 +178,8 @@ const ScrollExpandMedia = ({
   // Smooth easing so the expansion + title slide are clearly visible even
   // on a fast swipe — each value eases toward its scroll-driven target.
   const EASE            = 'cubic-bezier(0.16, 1, 0.3, 1)';
-  const sizeTransition  = `width 0.55s ${EASE}, height 0.55s ${EASE}, box-shadow 0.55s ${EASE}`;
-  const moveTransition  = `transform 0.7s ${EASE}`;
+  const sizeTransition  = `width 0.4s ${EASE}, height 0.4s ${EASE}, box-shadow 0.4s ${EASE}`;
+  const moveTransition  = `transform 0.45s ${EASE}`;
 
   const firstWord   = title ? title.split(' ')[0] : '';
   const restOfTitle = title ? title.split(' ').slice(1).join(' ') : '';
